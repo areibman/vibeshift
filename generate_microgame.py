@@ -9,16 +9,15 @@ import sys
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+import litellm
+import agentops
+from agentops.sdk.decorators import trace, agent, operation
 
-try:
-    import litellm
-    litellm.drop_params = True
-except ImportError:
-    print("❌ Error: litellm is not installed.")
-    print("Please install it with: pip install litellm")
-    sys.exit(1)
+agentops.init(api_key="f0887d0f-5198-45e0-a167-713eab851484",
+              trace_name="VibeWare Microgame Generator")
 
 
+@agent
 class MicrogameGenerator:
     def __init__(self, max_retries: int = 3):
         self.max_retries = max_retries
@@ -132,13 +131,14 @@ Just output the pure TypeScript code."""
         except Exception as e:
             return False, f"Validation error: {e}"
 
+    @operation
     def generate_microgame(self,
                            name: str,
                            prompt: str,
                            description: str,
                            controls: str,
                            game_idea: str,
-                           model: str = "gpt-4") -> bool:
+                           model: str = "gpt-4o") -> bool:
         """Generate a new microgame based on the provided details"""
 
         # Create user prompt
@@ -242,11 +242,12 @@ def main():
     print("=" * 40)
 
     # Check for API key
-    if not os.environ.get('OPENAI_API_KEY') and not os.environ.get('ANTHROPIC_API_KEY'):
+    if not os.environ.get('OPENAI_API_KEY') and not os.environ.get('ANTHROPIC_API_KEY') and not os.environ.get('GOOGLE_API_KEY'):
         print("\n⚠️  Warning: No API key found in environment variables.")
         print("Set one of the following:")
-        print("  export OPENAI_API_KEY='your-key-here'")
-        print("  export ANTHROPIC_API_KEY='your-key-here'")
+        print("  export OPENAI_API_KEY='your-key-here' (for GPT-4o)")
+        print("  export ANTHROPIC_API_KEY='your-key-here' (for Claude)")
+        print("  export GOOGLE_API_KEY='your-key-here' (for Gemini)")
         print("\nOr you can set a custom model that doesn't require these keys.\n")
 
     # Get game details from user
@@ -271,17 +272,17 @@ def main():
 
     # Model selection
     print("\nSelect AI model:")
-    print("1. GPT-4 (default, requires OPENAI_API_KEY)")
-    print("2. GPT-3.5-turbo (requires OPENAI_API_KEY)")
-    print("3. Claude (requires ANTHROPIC_API_KEY)")
+    print("1. GPT-4o (default, requires OPENAI_API_KEY)")
+    print("2. Claude 3.7 Sonnet (requires ANTHROPIC_API_KEY)")
+    print("3. Gemini 2.5 Pro (requires GOOGLE_API_KEY)")
     print("4. Custom (enter your own)")
 
     model_choice = input("\nChoice [1]: ").strip() or "1"
 
     model_map = {
-        "1": "gpt-4",
-        "2": "gpt-3.5-turbo",
-        "3": "claude-2",
+        "1": "gpt-4o",
+        "2": "claude-3-7-sonnet-latest",
+        "3": "gemini-2.5-pro-exp-03-25",
         "4": None
     }
 
@@ -289,7 +290,7 @@ def main():
     if model is None and model_choice == "4":
         model = input("Enter model name: ").strip()
     elif model is None:
-        model = "gpt-4"
+        model = "gpt-4o"
 
     # Generate the game
     generator = MicrogameGenerator()
