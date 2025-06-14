@@ -39,6 +39,35 @@ export const MICROGAMES: MicrogameInfo[] = [
         prompt: 'DODGE!',
         description: 'Avoid falling projectiles',
         controls: 'Arrow keys: Move left/right'
+    },
+    // Temporary test games
+    {
+        key: 'CatchGame',
+        name: 'Test Game 4',
+        prompt: 'TEST!',
+        description: 'Testing scroll functionality',
+        controls: 'Test controls'
+    },
+    {
+        key: 'CatchGame',
+        name: 'Test Game 5',
+        prompt: 'TEST!',
+        description: 'Testing scroll functionality',
+        controls: 'Test controls'
+    },
+    {
+        key: 'CatchGame',
+        name: 'Test Game 6',
+        prompt: 'TEST!',
+        description: 'Testing scroll functionality',
+        controls: 'Test controls'
+    },
+    {
+        key: 'CatchGame',
+        name: 'Test Game 7',
+        prompt: 'TEST!',
+        description: 'Testing scroll functionality',
+        controls: 'Test controls'
     }
     // Add more games here as they're created
 ];

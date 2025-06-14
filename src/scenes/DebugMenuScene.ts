@@ -4,6 +4,13 @@ import { COLORS, GAME_WIDTH, GAME_HEIGHT, MICROGAMES, MicrogameInfo, INITIAL_GAM
 export default class DebugMenuScene extends Phaser.Scene {
     private gameButtons: Phaser.GameObjects.Container[] = [];
     private selectedIndex: number = 0;
+    private scrollContainer!: Phaser.GameObjects.Container;
+    private scrollY: number = 0;
+    private maxScrollY: number = 0;
+    private viewportHeight: number = 380; // Height of the scrollable area
+    private viewportMask!: Phaser.Display.Masks.GeometryMask;
+    private scrollUpIndicator!: Phaser.GameObjects.Container;
+    private scrollDownIndicator!: Phaser.GameObjects.Container;
 
     constructor() {
         super({ key: 'DebugMenuScene' });
@@ -13,6 +20,8 @@ export default class DebugMenuScene extends Phaser.Scene {
         // Reset scene state when entering
         this.gameButtons = [];
         this.selectedIndex = 0;
+        this.scrollY = 0;
+        this.maxScrollY = 0;
     }
 
     create() {
@@ -22,6 +31,24 @@ export default class DebugMenuScene extends Phaser.Scene {
         // Create title
         this.createTitle();
 
+        // Create scrollable container for game buttons
+        this.scrollContainer = this.add.container(0, 0);
+
+        // Create viewport mask - the mask needs to be invisible
+        const maskShape = this.make.graphics({ x: 0, y: 0 }, false);
+        maskShape.fillStyle(0xffffff);
+        maskShape.fillRect(0, 150, GAME_WIDTH, this.viewportHeight);
+        this.viewportMask = maskShape.createGeometryMask();
+        // TEMPORARILY DISABLED: this.scrollContainer.setMask(this.viewportMask);
+
+        // Create scroll indicators first (before game buttons)
+        this.createScrollIndicators();
+
+        // Debug: Add a border around the viewport area
+        const debugBorder = this.add.graphics();
+        debugBorder.lineStyle(2, 0xFF0000, 1);
+        debugBorder.strokeRect(0, 150, GAME_WIDTH, this.viewportHeight);
+
         // Create game buttons
         this.createGameButtons();
 
@@ -30,6 +57,9 @@ export default class DebugMenuScene extends Phaser.Scene {
 
         // Add keyboard navigation
         this.setupKeyboardControls();
+
+        // Add mouse wheel support
+        this.setupMouseWheel();
     }
 
     private createBackground() {
@@ -93,14 +123,20 @@ export default class DebugMenuScene extends Phaser.Scene {
     }
 
     private createGameButtons() {
-        const startY = 150;
+        const startY = 150; // Start at viewport position
         const buttonHeight = 100;
         const buttonSpacing = 20;
 
         MICROGAMES.forEach((game, index) => {
             const container = this.createGameButton(game, index, startY + (buttonHeight + buttonSpacing) * index);
             this.gameButtons.push(container);
+            // Add to scroll container
+            this.scrollContainer.add(container);
         });
+
+        // Calculate max scroll
+        const totalHeight = MICROGAMES.length * (buttonHeight + buttonSpacing);
+        this.maxScrollY = Math.max(0, totalHeight - this.viewportHeight);
 
         // If no games, show placeholder
         if (MICROGAMES.length === 0) {
@@ -114,6 +150,8 @@ export default class DebugMenuScene extends Phaser.Scene {
         } else {
             // Highlight first button
             this.highlightButton(0);
+            // Update scroll indicators
+            this.updateScrollIndicators();
         }
     }
 
@@ -171,6 +209,7 @@ export default class DebugMenuScene extends Phaser.Scene {
         // Store reference to background for highlighting
         container.setData('background', bg);
 
+        // Don't add to scene here - it will be added to scrollContainer
         return container;
     }
 
@@ -218,6 +257,7 @@ export default class DebugMenuScene extends Phaser.Scene {
             if (this.gameButtons.length > 0) {
                 this.selectedIndex = Math.max(0, this.selectedIndex - 1);
                 this.highlightButton(this.selectedIndex);
+                this.ensureButtonVisible(this.selectedIndex);
             }
         });
 
@@ -225,6 +265,7 @@ export default class DebugMenuScene extends Phaser.Scene {
             if (this.gameButtons.length > 0) {
                 this.selectedIndex = Math.min(this.gameButtons.length - 1, this.selectedIndex + 1);
                 this.highlightButton(this.selectedIndex);
+                this.ensureButtonVisible(this.selectedIndex);
             }
         });
 
@@ -245,6 +286,32 @@ export default class DebugMenuScene extends Phaser.Scene {
         this.input.keyboard?.on('keydown-ESC', () => {
             this.scene.start('TitleScene');
         });
+
+        // Page Up/Down for faster scrolling
+        this.input.keyboard?.on('keydown-PAGE_UP', () => {
+            this.scrollTo(this.scrollY - this.viewportHeight);
+        });
+
+        this.input.keyboard?.on('keydown-PAGE_DOWN', () => {
+            this.scrollTo(this.scrollY + this.viewportHeight);
+        });
+    }
+
+    private ensureButtonVisible(index: number) {
+        if (this.gameButtons.length === 0 || index < 0 || index >= this.gameButtons.length) return;
+
+        const button = this.gameButtons[index];
+        const buttonY = button.y - 150; // Adjust for viewport offset
+        const buttonTop = buttonY - 45; // Half button height
+        const buttonBottom = buttonY + 45;
+
+        if (buttonTop < this.scrollY) {
+            // Scroll up to show button
+            this.scrollTo(buttonTop);
+        } else if (buttonBottom > this.scrollY + this.viewportHeight) {
+            // Scroll down to show button  
+            this.scrollTo(buttonBottom - this.viewportHeight);
+        }
     }
 
     private highlightButton(index: number) {
@@ -301,5 +368,62 @@ export default class DebugMenuScene extends Phaser.Scene {
                 this.scene.start(gameKey, { gameState: debugState });
             }
         });
+    }
+
+    private createScrollIndicators() {
+        // Up indicator
+        this.scrollUpIndicator = this.add.container(GAME_WIDTH / 2, 140);
+        const upBg = this.add.rectangle(0, 0, 60, 20, 0x000000, 0.7);
+        const upArrow = this.add.text(0, 0, '▲', {
+            fontSize: '16px',
+            fontFamily: 'Arial',
+            color: '#FFFFFF'
+        }).setOrigin(0.5);
+        this.scrollUpIndicator.add([upBg, upArrow]);
+        this.scrollUpIndicator.setVisible(false);
+
+        // Down indicator
+        this.scrollDownIndicator = this.add.container(GAME_WIDTH / 2, 540);
+        const downBg = this.add.rectangle(0, 0, 60, 20, 0x000000, 0.7);
+        const downArrow = this.add.text(0, 0, '▼', {
+            fontSize: '16px',
+            fontFamily: 'Arial',
+            color: '#FFFFFF'
+        }).setOrigin(0.5);
+        this.scrollDownIndicator.add([downBg, downArrow]);
+        this.scrollDownIndicator.setVisible(false);
+
+        // Add pulsing animation to indicators
+        this.tweens.add({
+            targets: [this.scrollUpIndicator, this.scrollDownIndicator],
+            alpha: { from: 0.5, to: 1 },
+            duration: 800,
+            ease: 'Sine.inOut',
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+    private updateScrollIndicators() {
+        this.scrollUpIndicator.setVisible(this.scrollY > 0);
+        this.scrollDownIndicator.setVisible(this.scrollY < this.maxScrollY);
+    }
+
+    private setupMouseWheel() {
+        this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any[], deltaX: number, deltaY: number, deltaZ: number) => {
+            const scrollSpeed = 30;
+            this.scrollTo(this.scrollY + (deltaY > 0 ? scrollSpeed : -scrollSpeed));
+        });
+    }
+
+    private scrollTo(newScrollY: number) {
+        // Clamp scroll position
+        this.scrollY = Phaser.Math.Clamp(newScrollY, 0, this.maxScrollY);
+
+        // Update container position
+        this.scrollContainer.y = -this.scrollY;
+
+        // Update scroll indicators
+        this.updateScrollIndicators();
     }
 } 
