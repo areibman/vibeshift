@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, GameState } from '../GameConfig';
+import { AudioManager } from '../AudioManager';
 
 /**
  * Base class for all VibeWare microgames
@@ -89,6 +90,10 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
             this.setupControls();
             this.startTimer();
             this.gameReady = true;
+
+            // Play a random short audio clip for the game duration
+            const audioManager = AudioManager.getInstance(this);
+            audioManager.playRandomShortClip(this.getGameDuration());
         });
     }
 
@@ -256,6 +261,10 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
 
         this.gameEnded = true;
         this.gameTimer.remove();
+
+        // Stop the music
+        const audioManager = AudioManager.getInstance();
+        audioManager.stopCurrentMusic();
 
         // Clean up controls
         this.cleanupControls();

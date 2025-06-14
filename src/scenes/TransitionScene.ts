@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, GameState, MICROGAMES } from '../GameConfig';
+import { AudioManager } from '../AudioManager';
 
 export default class TransitionScene extends Phaser.Scene {
     private gameState!: GameState;
@@ -23,6 +24,10 @@ export default class TransitionScene extends Phaser.Scene {
     }
 
     create() {
+        // Play transition music for 4 seconds (3s countdown + 1s transition)
+        const audioManager = AudioManager.getInstance(this);
+        audioManager.playTransitionMusic(4000);
+
         // Create animated background
         this.createBackground();
 
@@ -500,25 +505,28 @@ export default class TransitionScene extends Phaser.Scene {
     }
 
     private transitionToGame() {
-        // Flash effect
-        const flash = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0xFFFFFF)
-            .setAlpha(0);
+        // Add a 0.5 second delay before transitioning
+        this.time.delayedCall(500, () => {
+            // Flash effect
+            const flash = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0xFFFFFF)
+                .setAlpha(0);
 
-        this.tweens.add({
-            targets: flash,
-            alpha: 1,
-            duration: 200,
-            yoyo: true,
-            onComplete: () => {
-                if (this.nextGameKey && this.scene.get(this.nextGameKey)) {
-                    // Start the selected microgame
-                    this.scene.start(this.nextGameKey, { gameState: this.gameState });
-                } else {
-                    // Fallback to title if no game available
-                    console.warn('No microgame available, returning to title');
-                    this.scene.start('TitleScene');
+            this.tweens.add({
+                targets: flash,
+                alpha: 1,
+                duration: 200,
+                yoyo: true,
+                onComplete: () => {
+                    if (this.nextGameKey && this.scene.get(this.nextGameKey)) {
+                        // Start the selected microgame
+                        this.scene.start(this.nextGameKey, { gameState: this.gameState });
+                    } else {
+                        // Fallback to title if no game available
+                        console.warn('No microgame available, returning to title');
+                        this.scene.start('TitleScene');
+                    }
                 }
-            }
+            });
         });
     }
 

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, INITIAL_GAME_STATE, GameState } from '../GameConfig';
+import { AudioManager } from '../AudioManager';
 
 export default class TitleScene extends Phaser.Scene {
     private titleText!: Phaser.GameObjects.Text;
@@ -13,6 +14,10 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     create() {
+        // Initialize and play title music
+        const audioManager = AudioManager.getInstance(this);
+        audioManager.playTitleMusic();
+
         // Create animated background
         this.createAnimatedBackground();
 
@@ -307,6 +312,10 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     private startGame() {
+        // Fade out music
+        const audioManager = AudioManager.getInstance();
+        audioManager.fadeOutMusic(300);
+
         // Add a zoom effect before transitioning
         this.tweens.add({
             targets: this.cameras.main,
@@ -317,16 +326,13 @@ export default class TitleScene extends Phaser.Scene {
                 this.scene.start('TransitionScene', { gameState: this.gameState });
             }
         });
-
-        // Fade out sound
-        this.tweens.add({
-            targets: this,
-            volume: 0,
-            duration: 300
-        });
     }
 
     private openDebugMenu() {
+        // Fade out music
+        const audioManager = AudioManager.getInstance();
+        audioManager.fadeOutMusic(300);
+
         this.tweens.add({
             targets: this.cameras.main,
             alpha: 0,
