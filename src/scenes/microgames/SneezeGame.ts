@@ -13,9 +13,10 @@ export default class SneezeGame extends BaseMicrogame {
     private sKey!: Phaser.Input.Keyboard.Key;
     private iframe!: HTMLIFrameElement;
     private iframeContainer!: HTMLDivElement;
+    private isIframePreloaded: boolean = false;
 
     constructor() {
-        super('SneezeGame');
+        super({ key: 'SneezeGame' });
     }
 
     getPrompt(): string {
@@ -30,14 +31,17 @@ export default class SneezeGame extends BaseMicrogame {
         // Create background with screentone pattern
         this.createBackground();
 
-        // Create iframe character
-        this.createIframeCharacter();
-
         // Create UI elements
         this.createUI();
 
         // Show game UI immediately
         this.showGameUI();
+
+        // Preload the iframe but keep it hidden
+        this.preloadIframeCharacter();
+
+        // Setup controls
+        this.setupControls();
     }
 
     setupControls(): void {
@@ -56,6 +60,7 @@ export default class SneezeGame extends BaseMicrogame {
         // Clean up iframe
         if (this.iframeContainer && this.iframeContainer.parentNode) {
             this.iframeContainer.parentNode.removeChild(this.iframeContainer);
+            this.isIframePreloaded = false;
         }
     }
 
@@ -88,7 +93,9 @@ export default class SneezeGame extends BaseMicrogame {
         }
     }
 
-    private createIframeCharacter() {
+    private preloadIframeCharacter() {
+        if (this.isIframePreloaded) return;
+
         // Get the game container element
         const gameContainer = document.getElementById('game-container');
         if (!gameContainer) {
@@ -96,23 +103,20 @@ export default class SneezeGame extends BaseMicrogame {
             return;
         }
 
-        // Get the canvas bounds for proper positioning
-        const canvas = gameContainer.querySelector('canvas');
-        const canvasRect = canvas ? canvas.getBoundingClientRect() : gameContainer.getBoundingClientRect();
-
         // Create container for iframe - smaller and centered
         this.iframeContainer = document.createElement('div');
         this.iframeContainer.style.position = 'absolute';
         this.iframeContainer.style.top = '50%';
         this.iframeContainer.style.left = '50%';
-        this.iframeContainer.style.width = '300px'; // Smaller size
+        this.iframeContainer.style.width = '300px';
         this.iframeContainer.style.height = '300px';
         this.iframeContainer.style.transform = 'translate(-50%, -50%)';
-        this.iframeContainer.style.pointerEvents = 'none'; // Allow clicks to pass through to Phaser
-        this.iframeContainer.style.zIndex = '1'; // Behind UI elements
+        this.iframeContainer.style.pointerEvents = 'none';
+        this.iframeContainer.style.zIndex = '1';
         this.iframeContainer.style.borderRadius = '15px';
         this.iframeContainer.style.overflow = 'hidden';
         this.iframeContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+        this.iframeContainer.style.display = 'none'; // Hide initially
 
         // Create iframe
         this.iframe = document.createElement('iframe');
@@ -125,25 +129,20 @@ export default class SneezeGame extends BaseMicrogame {
         this.iframe.referrerPolicy = 'no-referrer-when-downgrade';
         this.iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
         
-        // Prevent navigation away from embed
-        this.iframe.onload = () => {
-            try {
-                // Try to prevent navigation within iframe
-                if (this.iframe.contentWindow) {
-                    this.iframe.contentWindow.addEventListener('beforeunload', (e) => {
-                        e.preventDefault();
-                        return false;
-                    });
-                }
-            } catch (e) {
-                // Cross-origin restrictions may prevent this
-                console.log('Cannot access iframe content due to CORS');
-            }
-        };
-
         // Add iframe to container
         this.iframeContainer.appendChild(this.iframe);
         gameContainer.appendChild(this.iframeContainer);
+        
+        this.isIframePreloaded = true;
+    }
+
+    private showIframeCharacter() {
+        if (!this.isIframePreloaded) {
+            this.preloadIframeCharacter();
+        }
+        if (this.iframeContainer) {
+            this.iframeContainer.style.display = 'block';
+        }
     }
 
     private createUI() {
@@ -200,14 +199,6 @@ export default class SneezeGame extends BaseMicrogame {
         this.blushOverlay = this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, 0xff6b6b, 0).setDepth(5);
     }
 
-    private setupInput() {
-        this.sKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-        
-        this.sKey.on('down', () => {
-            this.handleSPress();
-        });
-    }
-
     private handleSPress() {
         if (this.gameEnded) return;
 
@@ -244,8 +235,10 @@ export default class SneezeGame extends BaseMicrogame {
             this.ahText.setColor('#ff6b6b');
         }
 
-        // Send cheek inflation data to iframe
-        this.sendSneezeProgressToIframe();
+        // Send cheek inflation data to iframe (only if iframe exists)
+        if (this.iframe) {
+            this.sendSneezeProgressToIframe();
+        }
 
         // Add blush effect when close
         if (this.sPresses > 7) {
@@ -254,7 +247,6 @@ export default class SneezeGame extends BaseMicrogame {
     }
 
     private triggerSneeze() {
-        // Show CHOO text with animation
         this.chooText.setVisible(true);
         this.chooText.setScale(0);
         
@@ -273,6 +265,47 @@ export default class SneezeGame extends BaseMicrogame {
         this.pressCounter.setVisible(false);
         this.progressBarBg.setVisible(false);
         this.progressBar.setVisible(false);
+    }
+
+    protected showSuccessFeedback(): void {
+        // Show the preloaded iframe
+        this.showIframeCharacter();
+
+        // Send final sneeze message to iframe
+        this.sendSneezeProgressToIframe();
+
+        // Set up a timer to hide the iframe after 3 seconds
+        this.time.delayedCall(3000, () => {
+            if (this.iframeContainer) {
+                this.iframeContainer.style.display = 'none';
+            }
+        });
+
+        const successText = this.add.text(this.scale.width / 2, this.scale.height / 2, 'ACHOO!', {
+            fontSize: '48px',
+            fontFamily: 'Arial Black, sans-serif',
+            color: '#00FF00',
+            stroke: '#000000',
+            strokeThickness: 6
+        }).setOrigin(0.5).setAlpha(0);
+
+        this.tweens.add({
+            targets: successText,
+            alpha: 1,
+            scaleX: { from: 0, to: 1.2 },
+            scaleY: { from: 0, to: 1.2 },
+            duration: 300,
+            ease: 'Back.out'
+        });
+
+        // Fade out
+        this.tweens.add({
+            targets: successText,
+            alpha: 0,
+            duration: 500,
+            delay: 1000,
+            onComplete: () => successText.destroy()
+        });
     }
 
 } 
