@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from './GameConfig';
+import PreloadScene from './scenes/PreloadScene';
 import TitleScene from './scenes/TitleScene';
 import TransitionScene from './scenes/TransitionScene';
 import DebugMenuScene from './scenes/DebugMenuScene';
@@ -16,6 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: [
+        PreloadScene,
         TitleScene,
         TransitionScene,
         DebugMenuScene,
