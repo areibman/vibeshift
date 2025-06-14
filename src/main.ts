@@ -6,6 +6,10 @@ import DebugMenuScene from './scenes/DebugMenuScene';
 import CatchGame from './scenes/microgames/CatchGame';
 import TypeGame from './scenes/microgames/TypeGame';
 import DodgeGame from './scenes/microgames/DodgeGame';
+import TerminalVirusGame from './scenes/microgames/TerminalVirusGame';
+import PetDogGame from './scenes/microgames/PetDogGame';
+import FruitSliceGame from './scenes/microgames/FruitSliceGame';
+import SneezeGame from './scenes/microgames/SneezeGame';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -23,7 +27,11 @@ const config: Phaser.Types.Core.GameConfig = {
         DebugMenuScene,
         CatchGame,
         TypeGame,
-        DodgeGame
+        DodgeGame,
+        TerminalVirusGame,
+        PetDogGame,
+        FruitSliceGame,
+        SneezeGame
     ],
     physics: {
         default: 'arcade',

@@ -4,6 +4,10 @@ import { COLORS, GAME_WIDTH, GAME_HEIGHT, MICROGAMES, MicrogameInfo, INITIAL_GAM
 export default class DebugMenuScene extends Phaser.Scene {
     private gameButtons: Phaser.GameObjects.Container[] = [];
     private selectedIndex: number = 0;
+    private scrollContainer!: Phaser.GameObjects.Container;
+    private scrollMask!: Phaser.GameObjects.Graphics;
+    private scrollSpeed: number = 15;
+    private isScrolling: boolean = false;
 
     constructor() {
         super({ key: 'DebugMenuScene' });
@@ -13,6 +17,7 @@ export default class DebugMenuScene extends Phaser.Scene {
         // Reset scene state when entering
         this.gameButtons = [];
         this.selectedIndex = 0;
+        this.isScrolling = false;
     }
 
     create() {
@@ -22,14 +27,17 @@ export default class DebugMenuScene extends Phaser.Scene {
         // Create title
         this.createTitle();
 
+        // Create scrollable container and mask
+        this.createScrollContainer();
+
         // Create game buttons
         this.createGameButtons();
 
         // Create back button
         this.createBackButton();
 
-        // Add keyboard navigation
-        this.setupKeyboardControls();
+        // Add keyboard and mouse wheel controls
+        this.setupControls();
     }
 
     private createBackground() {
@@ -92,14 +100,28 @@ export default class DebugMenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
     }
 
+    private createScrollContainer() {
+        // Create a container for the scrollable content
+        this.scrollContainer = this.add.container(0, 0);
+
+        // Create a mask for the scrollable area (content area between title and back button)
+        this.scrollMask = this.add.graphics()
+            .fillStyle(0xffffff)
+            .fillRect(0, 150, GAME_WIDTH, GAME_HEIGHT - 200);
+
+        // Apply the mask to the container
+        this.scrollContainer.setMask(this.scrollMask.createGeometryMask());
+    }
+
     private createGameButtons() {
-        const startY = 150;
+        const startY = 150; // Start below the title
         const buttonHeight = 100;
         const buttonSpacing = 20;
 
         MICROGAMES.forEach((game, index) => {
             const container = this.createGameButton(game, index, startY + (buttonHeight + buttonSpacing) * index);
             this.gameButtons.push(container);
+            this.scrollContainer.add(container);
         });
 
         // If no games, show placeholder
@@ -212,12 +234,27 @@ export default class DebugMenuScene extends Phaser.Scene {
             });
     }
 
-    private setupKeyboardControls() {
+    private setupControls() {
+        // Mouse wheel scrolling
+        this.input.on('wheel', (pointer: any, gameObjects: any, deltaX: number, deltaY: number, deltaZ: number) => {
+            const visibleHeight = GAME_HEIGHT - 200; // Space between title and back button
+            const contentHeight = this.getContentHeight();
+            const maxScroll = Math.max(0, contentHeight - visibleHeight);
+            
+            const newY = Phaser.Math.Clamp(
+                this.scrollContainer.y - deltaY * this.scrollSpeed,
+                -maxScroll,
+                0
+            );
+            this.scrollContainer.y = newY;
+        });
+
         // Arrow keys for navigation
         this.input.keyboard?.on('keydown-UP', () => {
             if (this.gameButtons.length > 0) {
                 this.selectedIndex = Math.max(0, this.selectedIndex - 1);
                 this.highlightButton(this.selectedIndex);
+                this.scrollToButton(this.selectedIndex);
             }
         });
 
@@ -225,6 +262,7 @@ export default class DebugMenuScene extends Phaser.Scene {
             if (this.gameButtons.length > 0) {
                 this.selectedIndex = Math.min(this.gameButtons.length - 1, this.selectedIndex + 1);
                 this.highlightButton(this.selectedIndex);
+                this.scrollToButton(this.selectedIndex);
             }
         });
 
@@ -244,6 +282,34 @@ export default class DebugMenuScene extends Phaser.Scene {
         // ESC to go back
         this.input.keyboard?.on('keydown-ESC', () => {
             this.scene.start('TitleScene');
+        });
+    }
+
+    private getContentHeight(): number {
+        if (this.gameButtons.length === 0) return 0;
+        const lastButton = this.gameButtons[this.gameButtons.length - 1];
+        return lastButton.y + 100 - 150; // Subtract the starting offset and add padding
+    }
+
+    private scrollToButton(index: number) {
+        const targetButton = this.gameButtons[index];
+        if (!targetButton) return;
+
+        const buttonY = targetButton.y;
+        const visibleAreaHeight = GAME_HEIGHT - 200;
+        const scrollY = -buttonY + 150 + visibleAreaHeight / 2;
+
+        // Clamp the scroll position
+        const contentHeight = this.getContentHeight();
+        const maxScroll = Math.max(0, contentHeight - visibleAreaHeight);
+        const clampedScrollY = Phaser.Math.Clamp(scrollY, -maxScroll, 0);
+
+        // Animate the scroll
+        this.tweens.add({
+            targets: this.scrollContainer,
+            y: clampedScrollY,
+            duration: 200,
+            ease: 'Power2'
         });
     }
 

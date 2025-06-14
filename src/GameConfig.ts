@@ -39,6 +39,34 @@ export const MICROGAMES: MicrogameInfo[] = [
         prompt: 'DODGE!',
         description: 'Avoid falling projectiles',
         controls: 'Arrow keys: Move left/right'
+    },
+    {
+        key: 'TerminalVirusGame',
+        name: 'Stop the Virus',
+        prompt: 'TERMINATE!',
+        description: 'Press Ctrl+C to stop the virus',
+        controls: 'Keyboard: Press Ctrl+C'
+    },
+    {
+        key: 'PetDogGame',
+        name: 'Pet the Dog',
+        prompt: 'PET!',
+        description: 'Hold spacebar to pet the dog',
+        controls: 'Keyboard: Hold Spacebar'
+    },
+    {
+        key: 'FruitSliceGame',
+        name: 'Slice the Fruits',
+        prompt: 'SLICE!',
+        description: 'Slice all fruits before they fall',
+        controls: 'Mouse: Drag to slice'
+    },
+    {
+        key: 'SneezeGame',
+        name: 'Fake Sneeze',
+        prompt: 'SNEEZE!',
+        description: 'Mash S key 10 times to build up a sneeze',
+        controls: 'Keyboard: Press S repeatedly'
     }
     // Add more games here as they're created
 ];
