@@ -1,6 +1,7 @@
 // Validation script for microgames
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Accept game name as argument
 const gameName = process.argv[2];
@@ -126,6 +127,38 @@ if (registryFile) {
     }
 } else {
     errors.push('Could not read registry.ts');
+}
+
+// TypeScript Linting Check
+console.log('\n🔍 Running TypeScript linting...');
+try {
+    // Run TypeScript compiler using the project's tsconfig
+    const result = execSync(`npx tsc --noEmit`, {
+        stdio: 'pipe',
+        encoding: 'utf8'
+    });
+
+    // If we get here, compilation succeeded for all files
+    passes.push('✓ TypeScript compilation passed (no syntax/type errors)');
+} catch (error) {
+    // Check if there are errors specifically for our game file
+    const tscOutput = error.stdout || error.stderr || error.toString();
+    const lines = tscOutput.split('\n').filter(line => line.trim());
+
+    // Filter for errors related to our game file only
+    const gameFileErrors = lines.filter(line => line.includes(gamePath));
+
+    if (gameFileErrors.length > 0) {
+        errors.push('TypeScript compilation failed - see errors below:');
+        gameFileErrors.forEach(line => {
+            if (line.includes('.ts(') || line.includes('error TS')) {
+                errors.push(`  ${line.trim()}`);
+            }
+        });
+    } else {
+        // No errors for our specific game file
+        passes.push('✓ TypeScript compilation passed for this game file');
+    }
 }
 
 // Report results
