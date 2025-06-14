@@ -3,13 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from './GameConfig';
 import TitleScene from './scenes/TitleScene';
 import TransitionScene from './scenes/TransitionScene';
 import DebugMenuScene from './scenes/DebugMenuScene';
-import CatchGame from './scenes/microgames/CatchGame';
-import TypeGame from './scenes/microgames/TypeGame';
-import DodgeGame from './scenes/microgames/DodgeGame';
-import TerminalVirusGame from './scenes/microgames/TerminalVirusGame';
-import PetDogGame from './scenes/microgames/PetDogGame';
-import FruitSliceGame from './scenes/microgames/FruitSliceGame';
-import SneezeGame from './scenes/microgames/SneezeGame';
+import { MICROGAME_SCENES } from './scenes/microgames/registry';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -25,13 +19,7 @@ const config: Phaser.Types.Core.GameConfig = {
         TitleScene,
         TransitionScene,
         DebugMenuScene,
-        CatchGame,
-        TypeGame,
-        DodgeGame,
-        TerminalVirusGame,
-        PetDogGame,
-        FruitSliceGame,
-        SneezeGame
+        ...MICROGAME_SCENES
     ],
     physics: {
         default: 'arcade',

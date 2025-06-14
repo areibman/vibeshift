@@ -18,58 +18,10 @@ export interface MicrogameInfo {
     controls: string;
 }
 
-export const MICROGAMES: MicrogameInfo[] = [
-    {
-        key: 'SneezeGame',
-        name: 'Fake Sneeze',
-        prompt: 'SNEEZE!',
-        description: 'Mash S key 10 times to build up a sneeze',
-        controls: 'Keyboard: Press S repeatedly'
-    },
-    {
-        key: 'CatchGame',
-        name: 'Catch the Egg',
-        prompt: 'CATCH!',
-        description: 'Move basket to catch falling egg',
-        controls: 'Mouse: Move left/right'
-    },
-    {
-        key: 'TypeGame',
-        name: 'Type the Word',
-        prompt: 'TYPE!',
-        description: 'Type the word shown before time runs out',
-        controls: 'Keyboard: Type letters, Backspace to delete'
-    },
-    {
-        key: 'DodgeGame',
-        name: 'Dodge the Fire',
-        prompt: 'DODGE!',
-        description: 'Avoid falling projectiles',
-        controls: 'Arrow keys: Move left/right'
-    },
-    {
-        key: 'TerminalVirusGame',
-        name: 'Stop the Virus',
-        prompt: 'TERMINATE!',
-        description: 'Press Ctrl+C to stop the virus',
-        controls: 'Keyboard: Press Ctrl+C'
-    },
-    {
-        key: 'PetDogGame',
-        name: 'Pet the Dog',
-        prompt: 'PET!',
-        description: 'Hold spacebar to pet the dog',
-        controls: 'Keyboard: Hold Spacebar'
-    },
-    {
-        key: 'FruitSliceGame',
-        name: 'Slice the Fruits',
-        prompt: 'SLICE!',
-        description: 'Slice all fruits before they fall',
-        controls: 'Mouse: Drag to slice'
-    }
-    // Add more games here as they're created
-];
+// Import microgame metadata from registry
+import { MICROGAME_METADATA } from './scenes/microgames/registry';
+
+export const MICROGAMES: MicrogameInfo[] = MICROGAME_METADATA;
 
 export const COLORS = {
     // Main palette
