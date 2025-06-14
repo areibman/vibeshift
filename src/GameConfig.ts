@@ -40,34 +40,33 @@ export const MICROGAMES: MicrogameInfo[] = [
         description: 'Avoid falling projectiles',
         controls: 'Arrow keys: Move left/right'
     },
-    // Temporary test games
     {
-        key: 'CatchGame',
-        name: 'Test Game 4',
-        prompt: 'TEST!',
-        description: 'Testing scroll functionality',
-        controls: 'Test controls'
+        key: 'TerminalVirusGame',
+        name: 'Terminal Virus',
+        prompt: 'ESCAPE!',
+        description: 'Navigate through the terminal maze',
+        controls: 'Arrow keys: Move'
     },
     {
-        key: 'CatchGame',
-        name: 'Test Game 5',
-        prompt: 'TEST!',
-        description: 'Testing scroll functionality',
-        controls: 'Test controls'
+        key: 'PetDogGame',
+        name: 'Pet the Dog',
+        prompt: 'PET!',
+        description: 'Give the good boy some pets',
+        controls: 'Mouse: Click and drag to pet'
     },
     {
-        key: 'CatchGame',
-        name: 'Test Game 6',
-        prompt: 'TEST!',
-        description: 'Testing scroll functionality',
-        controls: 'Test controls'
+        key: 'FruitSliceGame',
+        name: 'Fruit Slice',
+        prompt: 'SLICE!',
+        description: 'Slice the flying fruits',
+        controls: 'Mouse: Click and drag to slice'
     },
     {
-        key: 'CatchGame',
-        name: 'Test Game 7',
-        prompt: 'TEST!',
-        description: 'Testing scroll functionality',
-        controls: 'Test controls'
+        key: 'SneezeGame',
+        name: 'Sneeze Defense',
+        prompt: 'BLOCK!',
+        description: 'Block the incoming germs',
+        controls: 'Mouse: Move to block'
     }
     // Add more games here as they're created
 ];

@@ -34,20 +34,15 @@ export default class DebugMenuScene extends Phaser.Scene {
         // Create scrollable container for game buttons
         this.scrollContainer = this.add.container(0, 0);
 
-        // Create viewport mask - the mask needs to be invisible
+        // Create viewport mask
         const maskShape = this.make.graphics({ x: 0, y: 0 }, false);
         maskShape.fillStyle(0xffffff);
         maskShape.fillRect(0, 150, GAME_WIDTH, this.viewportHeight);
         this.viewportMask = maskShape.createGeometryMask();
-        // TEMPORARILY DISABLED: this.scrollContainer.setMask(this.viewportMask);
+        this.scrollContainer.setMask(this.viewportMask);
 
         // Create scroll indicators first (before game buttons)
         this.createScrollIndicators();
-
-        // Debug: Add a border around the viewport area
-        const debugBorder = this.add.graphics();
-        debugBorder.lineStyle(2, 0xFF0000, 1);
-        debugBorder.strokeRect(0, 150, GAME_WIDTH, this.viewportHeight);
 
         // Create game buttons
         this.createGameButtons();
@@ -120,19 +115,6 @@ export default class DebugMenuScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 3
         }).setOrigin(0.5);
-    }
-
-    private createScrollContainer() {
-        // Create a container for the scrollable content
-        this.scrollContainer = this.add.container(0, 0);
-
-        // Create a mask for the scrollable area (content area between title and back button)
-        this.scrollMask = this.add.graphics()
-            .fillStyle(0xffffff)
-            .fillRect(0, 150, GAME_WIDTH, GAME_HEIGHT - 200);
-
-        // Apply the mask to the container
-        this.scrollContainer.setMask(this.scrollMask.createGeometryMask());
     }
 
     private createGameButtons() {
@@ -264,21 +246,7 @@ export default class DebugMenuScene extends Phaser.Scene {
             });
     }
 
-    private setupControls() {
-        // Mouse wheel scrolling
-        this.input.on('wheel', (pointer: any, gameObjects: any, deltaX: number, deltaY: number, deltaZ: number) => {
-            const visibleHeight = GAME_HEIGHT - 200; // Space between title and back button
-            const contentHeight = this.getContentHeight();
-            const maxScroll = Math.max(0, contentHeight - visibleHeight);
-
-            const newY = Phaser.Math.Clamp(
-                this.scrollContainer.y - deltaY * this.scrollSpeed,
-                -maxScroll,
-                0
-            );
-            this.scrollContainer.y = newY;
-        });
-
+    private setupKeyboardControls() {
         // Arrow keys for navigation
         this.input.keyboard?.on('keydown-UP', () => {
             if (this.gameButtons.length > 0) {
@@ -341,33 +309,7 @@ export default class DebugMenuScene extends Phaser.Scene {
         }
     }
 
-    private getContentHeight(): number {
-        if (this.gameButtons.length === 0) return 0;
-        const lastButton = this.gameButtons[this.gameButtons.length - 1];
-        return lastButton.y + 100 - 150; // Subtract the starting offset and add padding
-    }
 
-    private scrollToButton(index: number) {
-        const targetButton = this.gameButtons[index];
-        if (!targetButton) return;
-
-        const buttonY = targetButton.y;
-        const visibleAreaHeight = GAME_HEIGHT - 200;
-        const scrollY = -buttonY + 150 + visibleAreaHeight / 2;
-
-        // Clamp the scroll position
-        const contentHeight = this.getContentHeight();
-        const maxScroll = Math.max(0, contentHeight - visibleAreaHeight);
-        const clampedScrollY = Phaser.Math.Clamp(scrollY, -maxScroll, 0);
-
-        // Animate the scroll
-        this.tweens.add({
-            targets: this.scrollContainer,
-            y: clampedScrollY,
-            duration: 200,
-            ease: 'Power2'
-        });
-    }
 
     private highlightButton(index: number) {
         // Ensure we have valid buttons
