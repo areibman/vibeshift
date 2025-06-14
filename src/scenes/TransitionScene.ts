@@ -14,9 +14,12 @@ export default class TransitionScene extends Phaser.Scene {
         super({ key: 'TransitionScene' });
     }
 
-    init(data: { gameState: GameState, lastGameWon?: boolean }) {
+    init(data: { gameState: GameState, lastGameWon?: boolean, previousGameKey?: string }) {
         this.gameState = data.gameState;
         this.lastGameWon = data.lastGameWon ?? true;
+        if (data.previousGameKey) {
+            this.gameState.previousGameKey = data.previousGameKey;
+        }
     }
 
     create() {
@@ -238,7 +241,14 @@ export default class TransitionScene extends Phaser.Scene {
     private showNextGameControls() {
         // Randomly select next microgame
         if (MICROGAMES.length > 0) {
-            const nextGame = Phaser.Utils.Array.GetRandom(MICROGAMES);
+            let availableGames = MICROGAMES;
+
+            // If we have a previous game and more than one game available, exclude it
+            if (this.gameState.previousGameKey && MICROGAMES.length > 1) {
+                availableGames = MICROGAMES.filter(game => game.key !== this.gameState.previousGameKey);
+            }
+
+            const nextGame = Phaser.Utils.Array.GetRandom(availableGames);
             this.nextGameKey = nextGame.key;
             const controls = nextGame.controls;
 
@@ -330,7 +340,7 @@ export default class TransitionScene extends Phaser.Scene {
         const gap = 5;
 
         // Create arrow keys
-        const keys = [];
+        const keys: Phaser.GameObjects.Graphics[] = [];
         const positions = [
             { x: 0, y: -keySize - gap, arrow: '▲' }, // Up
             { x: -keySize - gap, y: 0, arrow: '◀' }, // Left
@@ -388,7 +398,7 @@ export default class TransitionScene extends Phaser.Scene {
             { x: -52, y: 20 }, { x: -17, y: 20 }, { x: 18, y: 20 }, { x: 53, y: 20 }
         ];
 
-        const keys = [];
+        const keys: Phaser.GameObjects.Graphics[] = [];
         keyPositions.forEach(pos => {
             const key = this.add.graphics();
             key.fillStyle(0x666666, 1);

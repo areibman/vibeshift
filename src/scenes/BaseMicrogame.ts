@@ -291,7 +291,8 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
                 } else {
                     this.scene.start('TransitionScene', {
                         gameState: this.gameState,
-                        lastGameWon: won
+                        lastGameWon: won,
+                        previousGameKey: this.scene.key
                     });
                 }
             }

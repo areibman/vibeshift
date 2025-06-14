@@ -8,6 +8,7 @@ export interface GameState {
     speed: number;
     gamesCompleted: number;
     debugMode?: boolean;
+    previousGameKey?: string;
 }
 
 export interface MicrogameInfo {
@@ -54,5 +55,6 @@ export const INITIAL_GAME_STATE: GameState = {
     currentGame: 0,
     speed: 1,
     gamesCompleted: 0,
-    debugMode: false
+    debugMode: false,
+    previousGameKey: undefined
 }; 
