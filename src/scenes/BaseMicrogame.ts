@@ -65,14 +65,8 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
      * Initialize the microgame
      */
     init(data: { gameState: GameState }) {
-        this.gameState = data.gameState || {
-            lives: 4,
-            score: 0,
-            currentGame: 0,
-            speed: 1,
-            gamesCompleted: 0,
-            debugMode: false
-        };
+        // Use the passed game state
+        this.gameState = data.gameState;
 
         // Reset game state
         this.hasWon = false;
@@ -99,8 +93,8 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
     }
 
     /**
- * Update loop
- */
+     * Update loop
+     */
     update(time: number, delta: number) {
         if (!this.gameEnded && this.gameReady) {
             this.onGameUpdate(time, delta);
@@ -279,7 +273,8 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
             this.gameState.score += 100;
             this.gameState.gamesCompleted++;
 
-            if (this.gameState.gamesCompleted % 5 === 0) {
+            // Increase speed every 5 games (but not when starting from 0)
+            if (this.gameState.gamesCompleted > 0 && this.gameState.gamesCompleted % 5 === 0) {
                 this.gameState.speed = Math.min(this.gameState.speed + 0.2, 3);
             }
         } else {
