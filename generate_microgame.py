@@ -75,6 +75,9 @@ Just output the pure TypeScript code."""
             with open(registry_path, 'r') as f:
                 content = f.read()
 
+            # Save original content for rollback
+            original_content = content
+
             # Add import at the marker
             import_line = f"import {game_name} from './{game_name}';"
             content = content.replace(
@@ -113,6 +116,63 @@ Just output the pure TypeScript code."""
             print(f"❌ Error updating registry: {e}")
             return False
 
+    def _rollback_registry(self, game_name: str) -> None:
+        """Remove game from registry (used on validation failure)"""
+        try:
+            registry_path = self.base_path / "src/scenes/microgames/registry.ts"
+
+            with open(registry_path, 'r') as f:
+                content = f.read()
+
+            # Remove the import
+            import_line = f"import {game_name} from './{game_name}';\n"
+            content = content.replace(import_line, '')
+
+            # Remove from MICROGAME_SCENES array
+            content = content.replace(f"{game_name},\n    ", '')
+
+            # Remove metadata - this is trickier as we need to find the full block
+            lines = content.split('\n')
+            new_lines = []
+            skip_lines = 0
+
+            for i, line in enumerate(lines):
+                if skip_lines > 0:
+                    skip_lines -= 1
+                    continue
+
+                if f"key: '{game_name}'" in line:
+                    # Find the start of this metadata block (go back to find the opening brace)
+                    j = i
+                    while j >= 0 and '{' not in lines[j]:
+                        j -= 1
+                    # Find the end of this metadata block
+                    k = i
+                    brace_count = 0
+                    while k < len(lines):
+                        brace_count += lines[k].count('{') - \
+                            lines[k].count('}')
+                        if brace_count == 0 and '}' in lines[k]:
+                            # Skip the comma after the closing brace if present
+                            if k + 1 < len(lines) and lines[k + 1].strip() == ',':
+                                skip_lines = k - i + 1
+                            else:
+                                skip_lines = k - i
+                            break
+                        k += 1
+                else:
+                    new_lines.append(line)
+
+            content = '\n'.join(new_lines)
+
+            with open(registry_path, 'w') as f:
+                f.write(content)
+
+            print(f"↩️  Rolled back registry changes for {game_name}")
+
+        except Exception as e:
+            print(f"⚠️  Warning: Could not rollback registry: {e}")
+
     def _validate_game(self, game_name: str) -> Tuple[bool, str]:
         """Run validation script on the generated game"""
         try:
@@ -141,8 +201,8 @@ Just output the pure TypeScript code."""
                            model: str = "gpt-4o") -> bool:
         """Generate a new microgame based on the provided details"""
 
-        # Create user prompt
-        user_prompt = f"""Create a microgame called {name} with the following specifications:
+        # Create initial user prompt
+        initial_prompt = f"""Create a microgame called {name} with the following specifications:
 
 Game Name: {name}
 Prompt (shown to player): {prompt}
@@ -154,6 +214,12 @@ Generate the complete TypeScript code for this microgame. The class name should 
 
         print(f"\n🎮 Generating {name} using {model}...")
 
+        # Initialize messages array
+        messages = [
+            {"role": "system", "content": self._create_system_prompt()},
+            {"role": "user", "content": initial_prompt}
+        ]
+
         for attempt in range(1, self.max_retries + 1):
             print(f"\n📝 Attempt {attempt}/{self.max_retries}")
 
@@ -161,15 +227,17 @@ Generate the complete TypeScript code for this microgame. The class name should 
                 # Generate code using LiteLLM
                 response = litellm.completion(
                     model=model,
-                    messages=[
-                        {"role": "system", "content": self._create_system_prompt()},
-                        {"role": "user", "content": user_prompt}
-                    ],
+                    messages=messages,
                     temperature=0.7,
                     max_tokens=2000
                 )
 
-                generated_code = response.choices[0].message.content.strip()
+                generated_code = response.choices[0].message.content
+                if not generated_code:
+                    print("❌ No code generated in response")
+                    continue
+
+                generated_code = generated_code.strip()
 
                 # Clean up code if wrapped in markdown
                 if "```typescript" in generated_code:
@@ -201,6 +269,10 @@ Generate the complete TypeScript code for this microgame. The class name should 
 
                 if not self._update_registry(name, game_info):
                     print("❌ Failed to update registry")
+                    # Delete the generated file
+                    if output_path.exists():
+                        output_path.unlink()
+                        print(f"🗑️  Deleted generated file: {output_path}")
                     continue
 
                 # Validate the game
@@ -215,13 +287,33 @@ Generate the complete TypeScript code for this microgame. The class name should 
                         "   Then press 'D' on the title screen to access the debug menu")
                     return True
                 else:
-                    print(f"\n❌ Validation failed, retrying...")
-                    user_prompt = f"""{user_prompt}
+                    print(f"\n❌ Validation failed, cleaning up and retrying...")
 
-The previous attempt failed validation with these errors:
+                    # Delete the generated file
+                    if output_path.exists():
+                        output_path.unlink()
+                        print(f"🗑️  Deleted failed file: {output_path}")
+
+                    # Rollback registry changes
+                    self._rollback_registry(name)
+
+                    # Add the generated code and error to message history
+                    messages.append(
+                        {"role": "assistant", "content": generated_code})
+                    messages.append({
+                        "role": "user",
+                        "content": f"""The generated code failed validation with these errors:
+
 {validation_output}
 
-Please fix these issues and generate the corrected code."""
+Please generate the COMPLETE corrected TypeScript code for the {name} microgame that fixes all these issues. Remember to:
+1. Fix all TypeScript compilation errors
+2. Ensure all required methods are implemented
+3. Clean up unused imports and variables
+4. Make sure the code follows all the requirements
+
+Generate the full file again with all corrections applied."""
+                    })
 
             except Exception as e:
                 print(f"❌ Error: {e}")
