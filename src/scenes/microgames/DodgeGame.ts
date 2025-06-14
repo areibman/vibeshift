@@ -4,6 +4,11 @@ import BaseMicrogame from '../BaseMicrogame';
 
 export default class DodgeGame extends BaseMicrogame {
     private player!: Phaser.GameObjects.Rectangle;
+    private playerShadow!: Phaser.GameObjects.Ellipse;
+    private leftEye!: Phaser.GameObjects.Arc;
+    private rightEye!: Phaser.GameObjects.Arc;
+    private leftPupil!: Phaser.GameObjects.Arc;
+    private rightPupil!: Phaser.GameObjects.Arc;
     private projectiles!: Phaser.Physics.Arcade.Group;
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private projectileTimer!: Phaser.Time.TimerEvent;
@@ -24,28 +29,55 @@ export default class DodgeGame extends BaseMicrogame {
         // Enable physics
         this.physics.world.gravity.y = 0;
 
-        // Background
+        // Background - fiery sky
         this.createStandardBackground(0x2C1810, 0x8B4513);
 
         // Add some ground decoration
         const ground = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 20, GAME_WIDTH, 40, 0x654321);
 
+        // Add danger warning at top
+        const warningText = this.add.text(GAME_WIDTH / 2, 50, '⚠️ INCOMING! ⚠️', {
+            fontSize: '24px',
+            fontFamily: 'Arial Black, sans-serif',
+            color: '#FF6600',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        // Make warning text pulse
+        this.tweens.add({
+            targets: warningText,
+            alpha: 0.5,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
+
+        // Create player shadow
+        this.playerShadow = this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT - 85, 50, 20, 0x000000, 0.3);
+
         // Create player
         this.player = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 100, 40, 40, COLORS.primary);
         this.physics.add.existing(this.player);
+        const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+        playerBody.setCollideWorldBounds(true);
 
         // Add eyes to player
-        this.add.circle(this.player.x - 8, this.player.y - 8, 4, 0xFFFFFF);
-        this.add.circle(this.player.x + 8, this.player.y - 8, 4, 0xFFFFFF);
-        this.add.circle(this.player.x - 8, this.player.y - 8, 2, 0x000000);
-        this.add.circle(this.player.x + 8, this.player.y - 8, 2, 0x000000);
+        this.leftEye = this.add.circle(this.player.x - 8, this.player.y - 8, 4, 0xFFFFFF);
+        this.rightEye = this.add.circle(this.player.x + 8, this.player.y - 8, 4, 0xFFFFFF);
+        this.leftPupil = this.add.circle(this.player.x - 8, this.player.y - 8, 2, 0x000000);
+        this.rightPupil = this.add.circle(this.player.x + 8, this.player.y - 8, 2, 0x000000);
 
         // Create projectiles group
         this.projectiles = this.physics.add.group();
 
-        // Spawn projectiles periodically
+        // Start spawning projectiles immediately
+        this.spawnProjectile(); // Spawn first projectile immediately
+
+        // Spawn projectiles periodically (more frequently for excitement)
+        const spawnDelay = Math.max(200, 400 - (50 * Math.min(this.gameState.speed, 3)));
         this.projectileTimer = this.time.addEvent({
-            delay: 500 - (100 * Math.min(this.gameState.speed, 3)),
+            delay: spawnDelay,
             callback: () => this.spawnProjectile(),
             repeat: -1
         });
@@ -86,32 +118,75 @@ export default class DodgeGame extends BaseMicrogame {
         // Keep player in bounds
         this.player.x = Phaser.Math.Clamp(this.player.x, 20, GAME_WIDTH - 20);
 
-        // Update eye positions
-        const eyes = this.children.list.filter(child =>
-            child instanceof Phaser.GameObjects.Arc &&
-            (child as any).fillColor === 0xFFFFFF
-        ) as Phaser.GameObjects.Arc[];
-        if (eyes.length >= 2) {
-            eyes[0].x = this.player.x - 8;
-            eyes[0].y = this.player.y - 8;
-            eyes[1].x = this.player.x + 8;
-            eyes[1].y = this.player.y - 8;
-        }
+        // Update shadow position
+        this.playerShadow.x = this.player.x;
 
-        const pupils = this.children.list.filter(child =>
-            child instanceof Phaser.GameObjects.Arc &&
-            (child as any).fillColor === 0x000000
-        ) as Phaser.GameObjects.Arc[];
-        if (pupils.length >= 2) {
-            pupils[0].x = this.player.x - 8;
-            pupils[0].y = this.player.y - 8;
-            pupils[1].x = this.player.x + 8;
-            pupils[1].y = this.player.y - 8;
+        // Update eye positions
+        this.leftEye.x = this.player.x - 8;
+        this.leftEye.y = this.player.y - 8;
+        this.rightEye.x = this.player.x + 8;
+        this.rightEye.y = this.player.y - 8;
+
+        // Find nearest projectile
+        let nearestProjectile: any = null;
+        let nearestDistance = Infinity;
+
+        this.projectiles.children.entries.forEach((projectile: any) => {
+            const distance = Phaser.Math.Distance.Between(
+                this.player.x, this.player.y,
+                projectile.x, projectile.y
+            );
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestProjectile = projectile;
+            }
+        });
+
+        // Make pupils look at nearest projectile
+        if (nearestProjectile) {
+            const angle = Phaser.Math.Angle.Between(
+                this.player.x, this.player.y,
+                nearestProjectile.x, nearestProjectile.y
+            );
+
+            const pupilOffset = 1.5;
+            this.leftPupil.x = this.leftEye.x + Math.cos(angle) * pupilOffset;
+            this.leftPupil.y = this.leftEye.y + Math.sin(angle) * pupilOffset;
+            this.rightPupil.x = this.rightEye.x + Math.cos(angle) * pupilOffset;
+            this.rightPupil.y = this.rightEye.y + Math.sin(angle) * pupilOffset;
+        } else {
+            // Look straight ahead if no projectiles
+            this.leftPupil.x = this.leftEye.x;
+            this.leftPupil.y = this.leftEye.y;
+            this.rightPupil.x = this.rightEye.x;
+            this.rightPupil.y = this.rightEye.y;
         }
 
         // Clean up projectiles that are off screen
         this.projectiles.children.entries.forEach((projectile: any) => {
-            if (projectile.y > GAME_HEIGHT + 50) {
+            if (projectile.y > GAME_HEIGHT - 40) {
+                // Create ground impact effect
+                for (let i = 0; i < 5; i++) {
+                    const particle = this.add.circle(
+                        projectile.x + Phaser.Math.Between(-10, 10),
+                        GAME_HEIGHT - 40,
+                        Phaser.Math.Between(2, 5),
+                        projectile.fillColor
+                    );
+
+                    this.tweens.add({
+                        targets: particle,
+                        y: particle.y - Phaser.Math.Between(20, 40),
+                        x: particle.x + Phaser.Math.Between(-20, 20),
+                        alpha: 0,
+                        scale: 0,
+                        duration: 400,
+                        ease: 'Quad.out',
+                        onComplete: () => particle.destroy()
+                    });
+                }
+
+                this.projectiles.remove(projectile);
                 projectile.destroy();
             }
         });
@@ -123,30 +198,81 @@ export default class DodgeGame extends BaseMicrogame {
     }
 
     private spawnProjectile(): void {
-        if (this.hasFailed || this.gameEnded) return;
+        // Don't spawn if game has already ended
+        if (this.gameEnded) return;
 
         const x = Phaser.Math.Between(50, GAME_WIDTH - 50);
-        const projectile = this.add.circle(x, -20, 15, COLORS.danger);
 
-        // Add a fiery trail effect
-        this.add.circle(x, -25, 10, 0xFF6600, 0.5);
-        this.add.circle(x, -30, 5, 0xFFFF00, 0.3);
+        // Create different types of projectiles for variety
+        const projectileType = Phaser.Math.Between(0, 2);
+        let projectile: Phaser.GameObjects.Arc;
+        let size = 15;
+        let speed = 250 + (50 * this.gameState.speed);
+
+        switch (projectileType) {
+            case 0: // Regular fireball
+                projectile = this.add.circle(x, -20, size, COLORS.danger);
+                break;
+            case 1: // Blue ice shard (slightly faster)
+                projectile = this.add.circle(x, -20, size - 3, 0x00CCFF);
+                speed += 50;
+                break;
+            case 2: // Large meteor (slower but bigger)
+                size = 25;
+                projectile = this.add.circle(x, -20, size, 0x8B4513);
+                speed -= 50;
+                break;
+            default:
+                projectile = this.add.circle(x, -20, size, COLORS.danger);
+        }
 
         this.physics.add.existing(projectile);
-        const body = projectile.body as Phaser.Physics.Arcade.Body;
-        body.setVelocityY(200 + (100 * this.gameState.speed));
+        this.projectiles.add(projectile);
 
-        // Add slight wobble
+        const body = projectile.body as Phaser.Physics.Arcade.Body;
+        body.setVelocityY(speed);
+        body.setCircle(size);
+
+        // Add glow effect
+        const glow = this.add.circle(x, -20, size + 5, projectile.fillColor, 0.3);
+
+        // Add a fiery trail effect that follows the projectile
+        const trail1 = this.add.circle(x, -25, size * 0.7, projectile.fillColor, 0.5);
+        const trail2 = this.add.circle(x, -30, size * 0.4, 0xFFFF00, 0.3);
+
+        // Make trail and glow follow projectile
+        this.tweens.add({
+            targets: [trail1, trail2, glow],
+            y: projectile.y,
+            duration: 100,
+            repeat: -1,
+            onUpdate: () => {
+                trail1.y = projectile.y - 5;
+                trail2.y = projectile.y - 10;
+                trail1.x = projectile.x;
+                trail2.x = projectile.x;
+                glow.x = projectile.x;
+                glow.y = projectile.y;
+            }
+        });
+
+        // Add slight wobble to projectile
+        const wobbleAmount = projectileType === 2 ? 10 : 20; // Meteors wobble less
         this.tweens.add({
             targets: projectile,
-            x: x + Phaser.Math.Between(-20, 20),
+            x: x + Phaser.Math.Between(-wobbleAmount, wobbleAmount),
             duration: 500,
             ease: 'Sine.inOut',
             yoyo: true,
             repeat: -1
         });
 
-        this.projectiles.add(projectile);
+        // Clean up trail when projectile is destroyed
+        projectile.on('destroy', () => {
+            trail1.destroy();
+            trail2.destroy();
+            glow.destroy();
+        });
     }
 
     private handleHit(): void {
