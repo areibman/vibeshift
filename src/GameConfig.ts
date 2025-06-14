@@ -32,6 +32,13 @@ export const MICROGAMES: MicrogameInfo[] = [
         prompt: 'TYPE!',
         description: 'Type the word shown before time runs out',
         controls: 'Keyboard: Type letters, Backspace to delete'
+    },
+    {
+        key: 'DodgeGame',
+        name: 'Dodge the Fire',
+        prompt: 'DODGE!',
+        description: 'Avoid falling projectiles',
+        controls: 'Arrow keys: Move left/right'
     }
     // Add more games here as they're created
 ];

@@ -5,6 +5,7 @@ import TransitionScene from './scenes/TransitionScene';
 import DebugMenuScene from './scenes/DebugMenuScene';
 import CatchGame from './scenes/microgames/CatchGame';
 import TypeGame from './scenes/microgames/TypeGame';
+import DodgeGame from './scenes/microgames/DodgeGame';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -21,7 +22,8 @@ const config: Phaser.Types.Core.GameConfig = {
         TransitionScene,
         DebugMenuScene,
         CatchGame,
-        TypeGame
+        TypeGame,
+        DodgeGame
     ],
     physics: {
         default: 'arcade',
