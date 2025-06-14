@@ -4,7 +4,7 @@ import { COLORS, GAME_WIDTH, GAME_HEIGHT, GameState, MICROGAMES } from '../GameC
 export default class TransitionScene extends Phaser.Scene {
     private gameState!: GameState;
     private livesDisplay!: Phaser.GameObjects.Container;
-    private promptText!: Phaser.GameObjects.Text;
+    private controlsDisplay!: Phaser.GameObjects.Container;
     private countdownText!: Phaser.GameObjects.Text;
     private speedIndicator!: Phaser.GameObjects.Container;
     private nextGameKey: string = '';
@@ -37,8 +37,8 @@ export default class TransitionScene extends Phaser.Scene {
             this.showDramaticHeartBreak();
         }
 
-        // Show next game prompt
-        this.showNextGamePrompt();
+        // Show next game controls
+        this.showNextGameControls();
 
         // Start countdown
         this.startCountdown();
@@ -235,59 +235,225 @@ export default class TransitionScene extends Phaser.Scene {
         });
     }
 
-    private showNextGamePrompt() {
+    private showNextGameControls() {
         // Randomly select next microgame
         if (MICROGAMES.length > 0) {
             const nextGame = Phaser.Utils.Array.GetRandom(MICROGAMES);
             this.nextGameKey = nextGame.key;
-            const nextPrompt = nextGame.prompt;
+            const controls = nextGame.controls;
 
-            // Create prompt text
-            this.promptText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, nextPrompt, {
-                fontSize: '64px',
-                fontFamily: 'Arial Black, sans-serif',
-                color: '#FFFFFF',
-                stroke: '#000000',
-                strokeThickness: 8
-            }).setOrigin(0.5).setAlpha(0);
-        } else {
-            // Fallback if no games available
-            this.promptText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'GET READY!', {
-                fontSize: '64px',
-                fontFamily: 'Arial Black, sans-serif',
-                color: '#FFFFFF',
-                stroke: '#000000',
-                strokeThickness: 8
-            }).setOrigin(0.5).setAlpha(0);
-        }
+            // Create controls display container
+            this.controlsDisplay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2);
+            this.controlsDisplay.setAlpha(0);
 
-        // Dramatic entrance
-        this.tweens.add({
-            targets: this.promptText,
-            alpha: 1,
-            scaleX: { from: 0, to: 1.5 },
-            scaleY: { from: 0, to: 1.5 },
-            duration: 400,
-            ease: 'Back.out',
-            delay: 800,
-            onComplete: () => {
-                // Add shake effect
-                this.tweens.add({
-                    targets: this.promptText,
-                    x: GAME_WIDTH / 2 + Phaser.Math.Between(-5, 5),
-                    y: GAME_HEIGHT / 2 + Phaser.Math.Between(-5, 5),
-                    duration: 50,
-                    repeat: 5,
-                    yoyo: true
-                });
+            // Show control icons based on type
+            if (controls.toLowerCase().includes('mouse')) {
+                this.createMouseIcon();
+            } else if (controls.toLowerCase().includes('arrow')) {
+                this.createArrowKeysIcon();
+            } else if (controls.toLowerCase().includes('keyboard') || controls.toLowerCase().includes('type')) {
+                this.createKeyboardIcon();
+            } else if (controls.toLowerCase().includes('wasd')) {
+                this.createWASDIcon();
             }
+
+            // Add instruction text below icons
+            const instructionText = this.add.text(0, 80, controls, {
+                fontSize: '24px',
+                fontFamily: 'Arial Black, sans-serif',
+                color: '#FFFFFF',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setOrigin(0.5);
+            this.controlsDisplay.add(instructionText);
+
+            // Dramatic entrance
+            this.tweens.add({
+                targets: this.controlsDisplay,
+                alpha: 1,
+                scaleX: { from: 0, to: 1 },
+                scaleY: { from: 0, to: 1 },
+                duration: 400,
+                ease: 'Back.out',
+                delay: 800
+            });
+        }
+    }
+
+    private createMouseIcon() {
+        const mouseBody = this.add.graphics();
+
+        // Mouse body
+        mouseBody.fillStyle(0xFFFFFF, 1);
+        mouseBody.lineStyle(4, 0x000000, 1);
+        mouseBody.fillRoundedRect(-30, -40, 60, 80, 30);
+        mouseBody.strokeRoundedRect(-30, -40, 60, 80, 30);
+
+        // Mouse buttons divider
+        mouseBody.lineStyle(3, 0x000000, 1);
+        mouseBody.beginPath();
+        mouseBody.moveTo(0, -40);
+        mouseBody.lineTo(0, -10);
+        mouseBody.stroke();
+
+        // Scroll wheel
+        mouseBody.fillStyle(0x666666, 1);
+        mouseBody.fillRect(-5, -25, 10, 15);
+
+        this.controlsDisplay.add(mouseBody);
+
+        // Add movement arrows
+        const leftArrow = this.add.text(-60, 0, '◀', {
+            fontSize: '32px',
+            color: '#FFE66D'
+        }).setOrigin(0.5);
+
+        const rightArrow = this.add.text(60, 0, '▶', {
+            fontSize: '32px',
+            color: '#FFE66D'
+        }).setOrigin(0.5);
+
+        this.controlsDisplay.add([leftArrow, rightArrow]);
+
+        // Animate arrows
+        this.tweens.add({
+            targets: [leftArrow, rightArrow],
+            alpha: { from: 0.5, to: 1 },
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+    private createArrowKeysIcon() {
+        const keySize = 50;
+        const gap = 5;
+
+        // Create arrow keys
+        const keys = [];
+        const positions = [
+            { x: 0, y: -keySize - gap, arrow: '▲' }, // Up
+            { x: -keySize - gap, y: 0, arrow: '◀' }, // Left
+            { x: 0, y: 0, arrow: '▼' }, // Down
+            { x: keySize + gap, y: 0, arrow: '▶' } // Right
+        ];
+
+        positions.forEach((pos, index) => {
+            const key = this.add.graphics();
+            key.fillStyle(0x333333, 1);
+            key.lineStyle(3, 0xFFFFFF, 1);
+            key.fillRoundedRect(pos.x - keySize / 2, pos.y - keySize / 2, keySize, keySize, 8);
+            key.strokeRoundedRect(pos.x - keySize / 2, pos.y - keySize / 2, keySize, keySize, 8);
+
+            const arrow = this.add.text(pos.x, pos.y, pos.arrow, {
+                fontSize: '28px',
+                fontFamily: 'Arial Black, sans-serif',
+                color: '#FFFFFF'
+            }).setOrigin(0.5);
+
+            this.controlsDisplay.add([key, arrow]);
+            keys.push(key);
+
+            // Only highlight left and right for this game type
+            if (index === 1 || index === 3) {
+                this.tweens.add({
+                    targets: key,
+                    alpha: { from: 0.6, to: 1 },
+                    duration: 600,
+                    yoyo: true,
+                    repeat: -1,
+                    delay: index * 100
+                });
+            } else {
+                key.alpha = 0.3;
+                arrow.alpha = 0.3;
+            }
+        });
+    }
+
+    private createKeyboardIcon() {
+        // Simplified keyboard representation
+        const keyboardBg = this.add.graphics();
+        keyboardBg.fillStyle(0x333333, 1);
+        keyboardBg.lineStyle(3, 0xFFFFFF, 1);
+        keyboardBg.fillRoundedRect(-100, -30, 200, 60, 10);
+        keyboardBg.strokeRoundedRect(-100, -30, 200, 60, 10);
+
+        this.controlsDisplay.add(keyboardBg);
+
+        // Add some key representations
+        const keyPositions = [
+            { x: -70, y: -10 }, { x: -35, y: -10 }, { x: 0, y: -10 },
+            { x: 35, y: -10 }, { x: 70, y: -10 },
+            { x: -52, y: 20 }, { x: -17, y: 20 }, { x: 18, y: 20 }, { x: 53, y: 20 }
+        ];
+
+        const keys = [];
+        keyPositions.forEach(pos => {
+            const key = this.add.graphics();
+            key.fillStyle(0x666666, 1);
+            key.fillRoundedRect(pos.x - 12, pos.y - 12, 24, 24, 4);
+            this.controlsDisplay.add(key);
+            keys.push(key);
+        });
+
+        // Animate keys being pressed
+        keys.forEach((key, index) => {
+            this.tweens.add({
+                targets: key,
+                scaleY: 0.8,
+                alpha: { from: 0.6, to: 1 },
+                duration: 200,
+                yoyo: true,
+                repeat: -1,
+                delay: index * 100
+            });
+        });
+    }
+
+    private createWASDIcon() {
+        const keySize = 50;
+        const gap = 5;
+
+        // Create WASD keys
+        const positions = [
+            { x: 0, y: -keySize - gap, letter: 'W' }, // W
+            { x: -keySize - gap, y: 0, letter: 'A' }, // A
+            { x: 0, y: 0, letter: 'S' }, // S
+            { x: keySize + gap, y: 0, letter: 'D' } // D
+        ];
+
+        positions.forEach((pos, index) => {
+            const key = this.add.graphics();
+            key.fillStyle(0x333333, 1);
+            key.lineStyle(3, 0xFFFFFF, 1);
+            key.fillRoundedRect(pos.x - keySize / 2, pos.y - keySize / 2, keySize, keySize, 8);
+            key.strokeRoundedRect(pos.x - keySize / 2, pos.y - keySize / 2, keySize, keySize, 8);
+
+            const letter = this.add.text(pos.x, pos.y, pos.letter, {
+                fontSize: '32px',
+                fontFamily: 'Arial Black, sans-serif',
+                color: '#FFFFFF'
+            }).setOrigin(0.5);
+
+            this.controlsDisplay.add([key, letter]);
+
+            // Animate keys
+            this.tweens.add({
+                targets: key,
+                alpha: { from: 0.6, to: 1 },
+                duration: 600,
+                yoyo: true,
+                repeat: -1,
+                delay: index * 100
+            });
         });
     }
 
     private startCountdown() {
         let countdown = 3;
 
-        this.countdownText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80, '', {
+        this.countdownText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 140, '', {
             fontSize: '48px',
             fontFamily: 'Arial Black, sans-serif',
             color: '#FFE66D',
