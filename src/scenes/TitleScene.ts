@@ -350,7 +350,7 @@ export default class TitleScene extends Phaser.Scene {
                 });
             })
             .on('pointerdown', () => {
-                window.open('/blog.html', '_blank');
+                window.open('./blog.html', '_blank');
             });
 
         // Subtle pulse
