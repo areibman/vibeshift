@@ -12,6 +12,9 @@ import TerminalVirusGame from './TerminalVirusGame';
 import PetDogGame from './PetDogGame';
 import FruitSliceGame from './FruitSliceGame';
 import KeyboardSmashGame from './KeyboardSmashGame';
+import SneezeShieldGame from './SneezeShieldGame';
+import FlickThePickleGame from './FlickThePickleGame';
+import FlappyFeatherGame from './FlappyFeatherGame';
 
 // Export all games as an array
 export const MICROGAME_SCENES = [
@@ -24,6 +27,9 @@ export const MICROGAME_SCENES = [
     PetDogGame,
     FruitSliceGame,
     KeyboardSmashGame,
+    SneezeShieldGame,
+    FlickThePickleGame,
+    FlappyFeatherGame,
     // NEW_GAME_MARKER - Do not remove this comment
 ];
 
@@ -92,5 +98,26 @@ export const MICROGAME_METADATA = [
         description: 'Frantically hit as many different keyboard keys as possible before time runs out',
         controls: 'Keyboard: Press as many different keys as you can'
     },
+    {
+        key: 'SneezeShieldGame',
+        name: 'Sneezeshield Game',
+        prompt: 'BLOCK SNEEZE!',
+        description: 'A rapid sneeze is imminent! Use a tissue to block it.',
+        controls: 'Mouse'
+    },
+    {
+        key: 'FlickThePickleGame',
+        name: 'Flickthepickle Game',
+        prompt: 'FLICK!',
+        description: 'Flick a wobbly pickle from a jar.',
+        controls: 'Mouse'
+    },
+    {
+        key: 'FlappyFeatherGame',
+        name: 'Flappyfeather Game',
+        prompt: 'FLAP!',
+        description: 'Keep a feather in the air by flapping as much as you can.',
+        controls: 'Mouse Click'
+    }
     // NEW_METADATA_MARKER - Do not remove this comment
 ]; 
