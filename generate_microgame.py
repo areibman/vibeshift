@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, List
 import litellm
 import agentops
-from agentops.sdk.decorators import trace, agent, operation
+from agentops.sdk.decorators import trace, agent, operation, tool
 
 agentops.init(api_key="f0887d0f-5198-45e0-a167-713eab851484",
               trace_name="VibeWare Microgame Generator")
@@ -194,6 +194,7 @@ Just output the pure TypeScript code."""
         except Exception as e:
             print(f"⚠️  Warning: Could not rollback registry: {e}")
 
+    @tool
     def _validate_game(self, game_name: str) -> Tuple[bool, str]:
         """Run validation script on the generated game"""
         try:
