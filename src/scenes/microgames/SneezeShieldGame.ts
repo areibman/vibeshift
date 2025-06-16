@@ -52,8 +52,8 @@ export default class SneezeShieldGame extends BaseMicrogame {
         this.nose = this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 50, 70, 0xFFCC99);
 
         // Add eyes
-        const leftEye = this.add.ellipse(GAME_WIDTH / 2 - 35, GAME_HEIGHT / 2 - 20, 25, 30, 0xFFFFFF);
-        const rightEye = this.add.ellipse(GAME_WIDTH / 2 + 35, GAME_HEIGHT / 2 - 20, 25, 30, 0xFFFFFF);
+        this.add.ellipse(GAME_WIDTH / 2 - 35, GAME_HEIGHT / 2 - 20, 25, 30, 0xFFFFFF);
+        this.add.ellipse(GAME_WIDTH / 2 + 35, GAME_HEIGHT / 2 - 20, 25, 30, 0xFFFFFF);
 
         // Add pupils
         const leftPupil = this.add.circle(GAME_WIDTH / 2 - 35, GAME_HEIGHT / 2 - 20, 8, 0x000000);
