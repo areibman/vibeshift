@@ -5,7 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
 export default class FlappyFeatherGame extends BaseMicrogame {
     private feather!: Phaser.GameObjects.Ellipse;
     private velocityY: number = 0;
-    private gravity: number = 200;
+    private gravity: number = 400;
     private flapStrength: number = -300;
     private featherMaxY: number = GAME_HEIGHT - 50;
 
@@ -23,6 +23,7 @@ export default class FlappyFeatherGame extends BaseMicrogame {
 
     setupGame(): void {
         this.createBackground();
+        this.createSpikyBoundaries();
         this.createFeather();
     }
 
@@ -75,6 +76,42 @@ export default class FlappyFeatherGame extends BaseMicrogame {
             stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
+    }
+
+    private createSpikyBoundaries() {
+        const spikeWidth = 20;
+        const spikeHeight = 30;
+        const numberOfSpikes = Math.floor(GAME_WIDTH / spikeWidth);
+
+        // Create top spikes
+        for (let i = 0; i < numberOfSpikes; i++) {
+            const spike = this.add.triangle(
+                i * spikeWidth + spikeWidth / 2,
+                0,
+                0, 0,
+                spikeWidth / 2, spikeHeight,
+                spikeWidth, 0,
+                0xFF0000
+            );
+            spike.setStrokeStyle(2, 0x800000);
+        }
+
+        // Create bottom spikes
+        for (let i = 0; i < numberOfSpikes; i++) {
+            const spike = this.add.triangle(
+                i * spikeWidth + spikeWidth / 2,
+                GAME_HEIGHT,
+                0, 0,
+                spikeWidth / 2, -spikeHeight,
+                spikeWidth, 0,
+                0xFF0000
+            );
+            spike.setStrokeStyle(2, 0x800000);
+        }
+
+        // Add danger indicators
+        this.add.rectangle(0, 0, GAME_WIDTH, 5, 0xFF0000, 0.5);
+        this.add.rectangle(0, GAME_HEIGHT, GAME_WIDTH, 5, 0xFF0000, 0.5);
     }
 
     private createFeather() {
