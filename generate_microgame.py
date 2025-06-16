@@ -11,7 +11,7 @@ import argparse
 import random
 import json
 from pathlib import Path
-from typing import Dict, Optional, Tuple, List
+from typing import Dict, Tuple, List
 import litellm
 import agentops
 from agentops.sdk.decorators import trace, agent, operation, tool
@@ -76,7 +76,7 @@ CRITICAL REQUIREMENTS:
 15. TypeScript knows about Phaser properties through inheritance - you DON'T need to declare properties like 'add', 'physics', etc. They come from Phaser.Scene
 16. When creating game objects, always specify their types: e.g., private mySprite!: Phaser.GameObjects.Sprite
 17. All of this code is within a single file, so don't expect to import anything from other files as part of this creation process
-18. The textures, sprites, and graphics of this game must all be defined within the file. Make sure they look good.
+18. The textures, sprites, and graphics of this game must all be created within the file. Make sure they look good.
 
 Do not include any explanations, comments outside the code, or markdown code blocks. 
 Just output the pure TypeScript code."""
@@ -395,7 +395,7 @@ Format your response as a JSON object with the following fields:
   "name": "GameNameGame",
   "prompt": "ACTION!",
   "description": "Brief description of what happens",
-  "controls": "How to control (e.g., Mouse: Click on targets)",
+  "controls": "How to control (e.g., Mouse, Keyboard, Arrow Keys)",
   "game_idea": "Detailed game concept including visual style, objective, and mechanics",
   "style": "Visual style and color palette"
 }
@@ -448,15 +448,7 @@ IMPORTANT:
 
         except Exception as e:
             print(f"❌ Error generating game ideas: {e}")
-            # Return a fallback game idea
-            return [{
-                "name": "ButtonMashGame",
-                "prompt": "MASH!",
-                "description": "Mash the spacebar as fast as possible",
-                "controls": "Keyboard: Press spacebar repeatedly",
-                "game_idea": "A simple button mashing game where players need to press spacebar 20 times in 3 seconds. The screen shows a progress bar that fills up with each press. Retro pixel art style with bright colors.",
-                "style": "Pixel art with bright neon colors"
-            }]
+            raise
 
 
 def main():
