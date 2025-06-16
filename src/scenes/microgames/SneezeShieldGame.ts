@@ -1,14 +1,12 @@
-
 import Phaser from 'phaser';
-import { COLORS, GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
 import BaseMicrogame from '../BaseMicrogame';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
 
 export default class SneezeShieldGame extends BaseMicrogame {
     private face!: Phaser.GameObjects.Ellipse;
     private nose!: Phaser.GameObjects.Ellipse;
     private tissue!: Phaser.GameObjects.Rectangle;
     private sneezeTimer!: Phaser.Time.TimerEvent;
-    private sneezeInProgress: boolean = false;
 
     constructor() {
         super({ key: 'SneezeShieldGame' });
@@ -46,14 +44,13 @@ export default class SneezeShieldGame extends BaseMicrogame {
 
     resetGameState(): void {
         // Reset sneezing state
-        this.sneezeInProgress = false;
     }
 
     private createFace() {
         // Create a humorous face with a big nose
         this.face = this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2, 150, 200, 0xFFE4B2);
         this.nose = this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 50, 70, 0xFFCC99);
-        
+
         // Add twitch animation to the face
         this.tweens.add({
             targets: this.face,
@@ -80,8 +77,6 @@ export default class SneezeShieldGame extends BaseMicrogame {
     }
 
     private triggerSneeze() {
-        this.sneezeInProgress = true;
-
         // Check the position of the tissue
         if (this.tissue.getBounds().contains(this.nose.x, this.nose.y + 10)) {
             this.setWinState();
@@ -90,7 +85,7 @@ export default class SneezeShieldGame extends BaseMicrogame {
         }
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, _delta: number): void {
         // Optional: Additional frame-based logic
     }
 
@@ -119,7 +114,7 @@ export default class SneezeShieldGame extends BaseMicrogame {
             delay: 1500,
             onComplete: () => blockedText.destroy()
         });
-        
+
         // Create an animation of the face smiling when the sneeze is blocked
         this.tweens.add({
             targets: this.face,
@@ -148,24 +143,30 @@ export default class SneezeShieldGame extends BaseMicrogame {
         });
 
         // Create sneeze spray animation if the block fails
-        const spray = this.add.particles('blue').createEmitter({
-            x: this.nose.x,
-            y: this.nose.y + 10,
-            angle: { min: 0, max: 360 },
-            speed: 100,
-            lifespan: { min: 200, max: 400 },
-            tint: [0xabcdef, 0xfedcba],
-            scale: { start: 0.5, end: 0 },
-            quantity: 10
-        });
+        // Create individual droplets manually
+        for (let i = 0; i < 10; i++) {
+            const droplet = this.add.circle(
+                this.nose.x,
+                this.nose.y + 10,
+                Phaser.Math.Between(3, 6),
+                0x00CCFF
+            );
 
-        this.tweens.add({
-            targets: spray,
-            alpha: 0,
-            scale: 0,
-            duration: 1000,
-            onComplete: () => spray.kill()
-        });
+            const angle = Phaser.Math.Between(-30, 30);
+            const speed = Phaser.Math.Between(200, 400);
+            const vx = Math.sin(Phaser.Math.DegToRad(angle)) * speed;
+            const vy = Math.cos(Phaser.Math.DegToRad(angle)) * speed;
+
+            this.tweens.add({
+                targets: droplet,
+                x: droplet.x + vx * 0.5,
+                y: droplet.y + vy * 0.5,
+                alpha: 0,
+                scale: 0,
+                duration: Phaser.Math.Between(200, 400),
+                onComplete: () => droplet.destroy()
+            });
+        }
 
         // Fade out
         this.tweens.add({

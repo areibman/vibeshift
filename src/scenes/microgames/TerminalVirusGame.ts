@@ -4,11 +4,9 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../../GameConfig';
 
 export default class TerminalVirusGame extends BaseMicrogame {
     private hexDump: string = '';
-    private glitchText: string = 'VIRUS DETECTED';
     private payloadProgress: number = 0;
     private terminalText!: Phaser.GameObjects.Text;
     private progressBar!: Phaser.GameObjects.Rectangle;
-    private progressBarBg!: Phaser.GameObjects.Rectangle;
     private isCtrlPressed: boolean = false;
 
     constructor() {
@@ -37,7 +35,7 @@ export default class TerminalVirusGame extends BaseMicrogame {
         }).setOrigin(0.5);
 
         // Create progress bar
-        this.progressBarBg = this.add.rectangle(GAME_WIDTH / 2, 300, 400, 20, 0x333333);
+        this.add.rectangle(GAME_WIDTH / 2, 300, 400, 20, 0x333333);
         this.progressBar = this.add.rectangle(GAME_WIDTH / 2, 300, 0, 20, COLORS.danger);
 
         // Add instruction text
@@ -82,7 +80,6 @@ export default class TerminalVirusGame extends BaseMicrogame {
 
     resetGameState(): void {
         this.hexDump = '';
-        this.glitchText = 'VIRUS DETECTED';
         this.payloadProgress = 0;
         this.isCtrlPressed = false;
     }
@@ -99,15 +96,9 @@ export default class TerminalVirusGame extends BaseMicrogame {
         }
         this.hexDump = lines.join('\n');
         this.terminalText.setText(this.hexDump);
-
-        // Add glitch effect to text
-        const chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~";
-        this.glitchText = 'VIRUS DETECTED'.split('')
-            .map(char => Math.random() < 0.3 ? chars[Math.floor(Math.random() * chars.length)] : char)
-            .join('');
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, _delta: number): void {
         // Update payload progress
         if (!this.hasWon) {
             this.payloadProgress = Math.min(100, this.payloadProgress + 0.1 * this.gameState.speed);
@@ -118,5 +109,8 @@ export default class TerminalVirusGame extends BaseMicrogame {
                 this.setFailState();
             }
         }
+
+        // Update glitch effects
+        // ... existing code ...
     }
 } 

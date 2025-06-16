@@ -16,7 +16,6 @@ export default class PetDogGame extends BaseMicrogame {
     private isSpacePressed: boolean = false;
     private dogSprite!: Phaser.GameObjects.Container;
     private progressBar!: Phaser.GameObjects.Rectangle;
-    private progressBarBg!: Phaser.GameObjects.Rectangle;
     private tail!: Phaser.GameObjects.Arc;
     private leftEye!: Phaser.GameObjects.Arc;
     private rightEye!: Phaser.GameObjects.Arc;
@@ -40,7 +39,7 @@ export default class PetDogGame extends BaseMicrogame {
         this.createStandardBackground(0x87CEEB, 0xFFE5B4);
 
         // Create progress bar
-        this.progressBarBg = this.add.rectangle(GAME_WIDTH / 2, 50, 400, 20, 0x333333);
+        this.add.rectangle(GAME_WIDTH / 2, 50, 400, 20, 0x333333);
         this.progressBar = this.add.rectangle(GAME_WIDTH / 2, 50, 0, 20, COLORS.success);
 
         // Create dog container

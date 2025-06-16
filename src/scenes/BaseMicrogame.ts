@@ -64,8 +64,8 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
      * Called every frame during gameplay
      * Override to add game-specific update logic
      */
-    protected onGameUpdate(time: number, delta: number): void {
-        // Override in subclass if needed
+    protected onGameUpdate(_time: number, _delta: number): void {
+        // Override in subclasses for update logic
     }
 
     /**

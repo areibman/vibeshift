@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
 import BaseMicrogame from '../BaseMicrogame';
 
 export default class CatchGame extends BaseMicrogame {
@@ -86,7 +86,7 @@ export default class CatchGame extends BaseMicrogame {
     /**
      * Update loop - check for eggs hitting ground
      */
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, _delta: number): void {
         if (!this.hasFailed && this.eggs) {
             this.eggs.children.entries.forEach((egg: any) => {
                 if (egg.active && egg.y > GAME_HEIGHT - 50) {
@@ -224,7 +224,7 @@ export default class CatchGame extends BaseMicrogame {
         });
     }
 
-    private catchEgg(basket: any, egg: any) {
+    private catchEgg(_basket: any, egg: any) {
         if (!this.hasWon && egg.active) {
             // Destroy the egg
             egg.destroy();

@@ -57,7 +57,6 @@ export default class TransitionScene extends Phaser.Scene {
         const graphics = this.add.graphics();
 
         const color1 = Phaser.Display.Color.IntegerToColor(COLORS.secondary);
-        const color2 = Phaser.Display.Color.IntegerToColor(COLORS.primary);
         const bgColor = Phaser.Display.Color.IntegerToColor(COLORS.background);
 
         for (let i = 0; i < GAME_HEIGHT; i++) {
@@ -597,7 +596,6 @@ export default class TransitionScene extends Phaser.Scene {
             // Create a giant heart in the center of the screen
             const centerX = GAME_WIDTH / 2;
             const centerY = GAME_HEIGHT / 2;
-            const heartSize = 120; // Large heart
 
             // Create container for the breaking heart
             const heartContainer = this.add.container(centerX, centerY);

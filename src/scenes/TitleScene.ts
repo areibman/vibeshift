@@ -5,7 +5,6 @@ import { AudioManager } from '../AudioManager';
 export default class TitleScene extends Phaser.Scene {
     private titleText!: Phaser.GameObjects.Text;
     private startButton!: Phaser.GameObjects.Container;
-    private particles!: Phaser.GameObjects.Particles.ParticleEmitter;
     private gameState: GameState;
 
     constructor() {
@@ -69,7 +68,7 @@ export default class TitleScene extends Phaser.Scene {
             tint: [COLORS.primary, COLORS.secondary, COLORS.tertiary, COLORS.quaternary]
         };
 
-        this.particles = this.add.particles(0, 0, 'flare', particleConfig);
+        this.add.particles(0, 0, 'flare', particleConfig);
 
         // Create simple colored squares as particles since we don't have textures yet
         const particleGraphics = this.make.graphics({});

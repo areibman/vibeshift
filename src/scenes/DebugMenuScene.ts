@@ -86,12 +86,9 @@ export default class DebugMenuScene extends Phaser.Scene {
 
     private createTitle() {
         const title = this.add.text(GAME_WIDTH / 2, 50, 'DEBUG MENU', {
-            fontSize: '48px',
-            fontFamily: 'Arial Black, sans-serif',
-            color: '#00FF00',
-            stroke: '#000000',
-            strokeThickness: 6
-        }).setOrigin(0.5);
+            font: 'bold 48px Arial',
+            color: '#00ff00'
+        }).setOrigin(0.5).setStroke('#000000', 3);
 
         // Glitch effect
         this.time.addEvent({
@@ -108,7 +105,7 @@ export default class DebugMenuScene extends Phaser.Scene {
             repeat: -1
         });
 
-        const subtitle = this.add.text(GAME_WIDTH / 2, 90, 'Select a microgame to test', {
+        this.add.text(GAME_WIDTH / 2, 90, 'Select a microgame to test', {
             fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
             color: '#FFFFFF',
@@ -309,8 +306,6 @@ export default class DebugMenuScene extends Phaser.Scene {
         }
     }
 
-
-
     private highlightButton(index: number) {
         // Ensure we have valid buttons
         if (this.gameButtons.length === 0) return;
@@ -407,10 +402,16 @@ export default class DebugMenuScene extends Phaser.Scene {
     }
 
     private setupMouseWheel() {
-        this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any[], deltaX: number, deltaY: number, deltaZ: number) => {
-            const scrollSpeed = 30;
-            this.scrollTo(this.scrollY + (deltaY > 0 ? scrollSpeed : -scrollSpeed));
+        this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: any[], _deltaX: number, deltaY: number, _deltaZ: number) => {
+            this.scrollY -= deltaY * 0.5;
+            this.constrainScroll();
         });
+    }
+
+    private constrainScroll() {
+        this.scrollY = Phaser.Math.Clamp(this.scrollY, 0, this.maxScrollY);
+        this.scrollContainer.y = -this.scrollY;
+        this.updateScrollIndicators();
     }
 
     private scrollTo(newScrollY: number) {

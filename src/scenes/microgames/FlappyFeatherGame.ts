@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import BaseMicrogame from '../BaseMicrogame';
-import { COLORS, GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
 
 export default class FlappyFeatherGame extends BaseMicrogame {
     private feather!: Phaser.GameObjects.Ellipse;
@@ -38,7 +38,7 @@ export default class FlappyFeatherGame extends BaseMicrogame {
         this.velocityY = 0;
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, delta: number): void {
         if (!this.hasFailed) {
             this.velocityY += this.gravity * (delta / 1000);
             this.feather.y += this.velocityY * (delta / 1000);

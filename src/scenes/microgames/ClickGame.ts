@@ -39,8 +39,8 @@ export default class ClickGame extends BaseMicrogame {
         }
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
-        // No additional update logic needed
+    protected onGameUpdate(_time: number, _delta: number): void {
+        // Game update logic here if needed
     }
 
     private createBackground() {
@@ -133,7 +133,7 @@ export default class ClickGame extends BaseMicrogame {
         const colors = [COLORS.neon.pink, COLORS.neon.cyan, COLORS.neon.yellow, COLORS.text];
         let colorIndex = 0;
 
-        const timer = this.time.addEvent({
+        this.time.addEvent({
             delay: 100,
             callback: () => {
                 this.target.setFillStyle(colors[colorIndex % colors.length]);
@@ -192,9 +192,6 @@ export default class ClickGame extends BaseMicrogame {
 
     // Fail animations
     private failShake() {
-        const originalX = this.cameras.main.scrollX;
-        const originalY = this.cameras.main.scrollY;
-
         this.cameras.main.shake(300, 0.02);
 
         // Flash red

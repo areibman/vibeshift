@@ -177,7 +177,7 @@ export default class FruitSliceGame extends BaseMicrogame {
         });
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, _delta: number): void {
         // Update fruits
         this.fruits.forEach(fruit => {
             if (!fruit.sliced) {

@@ -29,11 +29,11 @@ export default class DodgeGame extends BaseMicrogame {
         // Enable physics
         this.physics.world.gravity.y = 0;
 
-        // Background - fiery sky
-        this.createStandardBackground(0x2C1810, 0x8B4513);
+        // Create background
+        this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x87CEEB); // Sky blue
 
-        // Add some ground decoration
-        const ground = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 20, GAME_WIDTH, 40, 0x654321);
+        // Create ground (visual only)
+        this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 20, GAME_WIDTH, 40, 0x654321);
 
         // Add danger warning at top
         const warningText = this.add.text(GAME_WIDTH / 2, 50, '⚠️ INCOMING! ⚠️', {
@@ -105,7 +105,7 @@ export default class DodgeGame extends BaseMicrogame {
         // No persistent state to reset
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, _delta: number): void {
         if (this.hasFailed || this.gameEnded) return;
 
         // Move player

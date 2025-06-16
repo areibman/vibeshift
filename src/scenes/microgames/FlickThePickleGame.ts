@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
+import { GAME_WIDTH, GAME_HEIGHT } from '../../GameConfig';
 import BaseMicrogame from '../BaseMicrogame';
 
 export default class FlickThePickleGame extends BaseMicrogame {
@@ -8,7 +8,7 @@ export default class FlickThePickleGame extends BaseMicrogame {
     private isFlicked: boolean = false;
 
     constructor() {
-        super({ key: 'FlickThePickleGame' }); 
+        super({ key: 'FlickThePickleGame' });
     }
 
     getPrompt(): string {
@@ -16,7 +16,7 @@ export default class FlickThePickleGame extends BaseMicrogame {
     }
 
     getGameDuration(): number {
-        return 4000; 
+        return 4000;
     }
 
     setupGame(): void {
@@ -46,7 +46,7 @@ export default class FlickThePickleGame extends BaseMicrogame {
         this.isFlicked = false;
     }
 
-    protected onGameUpdate(time: number, delta: number): void {
+    protected onGameUpdate(_time: number, _delta: number): void {
         if (!this.isFlicked && this.pickle.angle > 45) {
             this.setFailState();
         }
@@ -115,7 +115,7 @@ export default class FlickThePickleGame extends BaseMicrogame {
             alpha: 1,
             duration: 600,
             yoyo: true,
-            onComplete: (tween, targets) => targets[0].destroy()
+            onComplete: (_tween: any, targets: any[]) => targets[0].destroy()
         });
     }
 }
