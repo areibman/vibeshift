@@ -75,6 +75,8 @@ CRITICAL REQUIREMENTS:
 14. When using physics groups or arcade physics, cast the body type appropriately: (object.body as Phaser.Physics.Arcade.Body)
 15. TypeScript knows about Phaser properties through inheritance - you DON'T need to declare properties like 'add', 'physics', etc. They come from Phaser.Scene
 16. When creating game objects, always specify their types: e.g., private mySprite!: Phaser.GameObjects.Sprite
+17. All of this code is within a single file, so don't expect to import anything from other files as part of this creation process
+18. The textures, sprites, and graphics of this game must all be defined within the file. Make sure they look good.
 
 Do not include any explanations, comments outside the code, or markdown code blocks. 
 Just output the pure TypeScript code."""

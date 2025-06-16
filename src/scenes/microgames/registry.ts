@@ -11,6 +11,7 @@ import SneezeGame from './SneezeGame';
 import TerminalVirusGame from './TerminalVirusGame';
 import PetDogGame from './PetDogGame';
 import FruitSliceGame from './FruitSliceGame';
+import KeyboardSmashGame from './KeyboardSmashGame';
 
 // Export all games as an array
 export const MICROGAME_SCENES = [
@@ -22,6 +23,7 @@ export const MICROGAME_SCENES = [
     TerminalVirusGame,
     PetDogGame,
     FruitSliceGame,
+    KeyboardSmashGame,
     // NEW_GAME_MARKER - Do not remove this comment
 ];
 
@@ -82,6 +84,13 @@ export const MICROGAME_METADATA = [
         prompt: 'SLICE!',
         description: 'Slice all fruits before they fall',
         controls: 'Mouse: Drag to slice'
+    },
+    {
+        key: 'KeyboardSmashGame',
+        name: 'Keyboardsmash Game',
+        prompt: 'SMASH!',
+        description: 'Frantically hit as many different keyboard keys as possible before time runs out',
+        controls: 'Keyboard: Press as many different keys as you can (duplicates don\'t count)'
     },
     // NEW_METADATA_MARKER - Do not remove this comment
 ]; 
