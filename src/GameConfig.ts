@@ -9,6 +9,7 @@ export interface GameState {
     gamesCompleted: number;
     debugMode?: boolean;
     previousGameKey?: string;
+    recentGames?: string[];  // Track recently played games
 }
 
 export interface MicrogameInfo {
@@ -56,5 +57,6 @@ export const INITIAL_GAME_STATE: GameState = {
     speed: 1,
     gamesCompleted: 0,
     debugMode: false,
-    previousGameKey: undefined
+    previousGameKey: undefined,
+    recentGames: []
 }; 

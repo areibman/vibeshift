@@ -90,7 +90,7 @@ export const MICROGAME_METADATA = [
         name: 'Keyboardsmash Game',
         prompt: 'SMASH!',
         description: 'Frantically hit as many different keyboard keys as possible before time runs out',
-        controls: 'Keyboard: Press as many different keys as you can (duplicates don\'t count)'
+        controls: 'Keyboard: Press as many different keys as you can'
     },
     // NEW_METADATA_MARKER - Do not remove this comment
 ]; 

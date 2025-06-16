@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, GAME_WIDTH, GAME_HEIGHT, GameState, MICROGAMES } from '../GameConfig';
+import { COLORS, GAME_WIDTH, GAME_HEIGHT, GameState, MICROGAMES, MicrogameInfo } from '../GameConfig';
 import { AudioManager } from '../AudioManager';
 
 export default class TransitionScene extends Phaser.Scene {
@@ -244,16 +244,60 @@ export default class TransitionScene extends Phaser.Scene {
     }
 
     private showNextGameControls() {
-        // Randomly select next microgame
+        // Randomly select next microgame with intelligent shuffling
         if (MICROGAMES.length > 0) {
-            let availableGames = MICROGAMES;
-
-            // If we have a previous game and more than one game available, exclude it
-            if (this.gameState.previousGameKey && MICROGAMES.length > 1) {
-                availableGames = MICROGAMES.filter(game => game.key !== this.gameState.previousGameKey);
+            // Initialize recentGames array if it doesn't exist
+            if (!this.gameState.recentGames) {
+                this.gameState.recentGames = [];
             }
 
-            const nextGame = Phaser.Utils.Array.GetRandom(availableGames);
+            // Maximum number of games to remember in history
+            const HISTORY_SIZE = Math.min(3, Math.floor(MICROGAMES.length / 2));
+
+            let nextGame: MicrogameInfo;
+
+            if (MICROGAMES.length <= HISTORY_SIZE + 1) {
+                // If we have very few games, just avoid the immediate previous one
+                let availableGames = MICROGAMES;
+                if (this.gameState.previousGameKey && MICROGAMES.length > 1) {
+                    availableGames = MICROGAMES.filter(game => game.key !== this.gameState.previousGameKey);
+                }
+                nextGame = Phaser.Utils.Array.GetRandom(availableGames);
+            } else {
+                // Create weighted selection based on recency
+                const gameWeights = MICROGAMES.map(game => {
+                    // Check if game is in recent history
+                    const recentIndex = this.gameState.recentGames!.indexOf(game.key);
+
+                    if (recentIndex === -1) {
+                        // Game hasn't been played recently - high weight
+                        return { game, weight: 100 };
+                    } else {
+                        // Recently played - lower weight based on how recent
+                        // Most recent gets lowest weight, older games get higher weights
+                        const age = this.gameState.recentGames!.length - recentIndex;
+                        return { game, weight: age * 20 };
+                    }
+                });
+
+                // Select game based on weights
+                const totalWeight = gameWeights.reduce((sum, gw) => sum + gw.weight, 0);
+                let random = Math.random() * totalWeight;
+
+                for (const gameWeight of gameWeights) {
+                    random -= gameWeight.weight;
+                    if (random <= 0) {
+                        nextGame = gameWeight.game;
+                        break;
+                    }
+                }
+
+                // Fallback in case something goes wrong
+                if (!nextGame!) {
+                    nextGame = Phaser.Utils.Array.GetRandom(MICROGAMES);
+                }
+            }
+
             this.nextGameKey = nextGame.key;
             const controls = nextGame.controls;
 
@@ -518,6 +562,23 @@ export default class TransitionScene extends Phaser.Scene {
                 yoyo: true,
                 onComplete: () => {
                     if (this.nextGameKey && this.scene.get(this.nextGameKey)) {
+                        // Update game history
+                        if (!this.gameState.recentGames) {
+                            this.gameState.recentGames = [];
+                        }
+
+                        // Add the current game to recent games history
+                        this.gameState.recentGames.push(this.nextGameKey);
+
+                        // Keep only the last N games in history
+                        const HISTORY_SIZE = Math.min(3, Math.floor(MICROGAMES.length / 2));
+                        if (this.gameState.recentGames.length > HISTORY_SIZE) {
+                            this.gameState.recentGames.shift(); // Remove oldest game
+                        }
+
+                        // Also update previousGameKey for backward compatibility
+                        this.gameState.previousGameKey = this.nextGameKey;
+
                         // Start the selected microgame
                         this.scene.start(this.nextGameKey, { gameState: this.gameState });
                     } else {
