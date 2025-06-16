@@ -27,7 +27,11 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 
 ## Usage
 
-Run the generator:
+The generator supports two modes:
+
+### 1. Wizard Mode (Interactive)
+
+Run the generator without arguments for interactive mode:
 
 ```bash
 python generate_microgame.py
@@ -41,7 +45,27 @@ This will prompt you for:
 - Detailed game concept
 - AI model selection
 
-The interactive prompts make it easy to specify exactly what you want without having to remember command-line syntax.
+### 2. Auto Mode (Automatic Generation)
+
+Run with the `--auto` flag to automatically generate game ideas and create one:
+
+```bash
+python generate_microgame.py --auto
+```
+
+You can also specify a model:
+
+```bash
+python generate_microgame.py --auto --model gpt-4o
+```
+
+In auto mode:
+- The AI generates 10 creative WarioWare-style microgame ideas
+- Displays all generated ideas with their prompts and descriptions
+- Randomly selects one game to implement
+- Automatically generates the complete game code
+
+This mode is perfect for rapid prototyping and getting inspiration!
 
 ## How It Works
 

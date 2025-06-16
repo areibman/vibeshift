@@ -11,9 +11,6 @@ export default class SneezeGame extends BaseMicrogame {
     private progressBarBg!: Phaser.GameObjects.Rectangle;
     private blushOverlay!: Phaser.GameObjects.Rectangle;
     private sKey!: Phaser.Input.Keyboard.Key;
-    private iframe!: HTMLIFrameElement;
-    private iframeContainer!: HTMLDivElement;
-    private isIframePreloaded: boolean = false;
 
     constructor() {
         super({ key: 'SneezeGame' });
@@ -27,6 +24,12 @@ export default class SneezeGame extends BaseMicrogame {
         return 3000; // 3 seconds
     }
 
+    init(data: { gameState: any }) {
+        super.init(data);
+        // Reset game-specific state
+        this.sPresses = 0;
+    }
+
     setupGame(): void {
         // Create background with screentone pattern
         this.createBackground();
@@ -37,16 +40,13 @@ export default class SneezeGame extends BaseMicrogame {
         // Show game UI immediately
         this.showGameUI();
 
-        // Preload the iframe but keep it hidden
-        this.preloadIframeCharacter();
-
         // Setup controls
         this.setupControls();
     }
 
     setupControls(): void {
         this.sKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-        
+
         this.sKey.on('down', () => {
             this.handleSPress();
         });
@@ -56,93 +56,22 @@ export default class SneezeGame extends BaseMicrogame {
         if (this.sKey) {
             this.sKey.removeAllListeners();
         }
-        
-        // Clean up iframe
-        if (this.iframeContainer && this.iframeContainer.parentNode) {
-            this.iframeContainer.parentNode.removeChild(this.iframeContainer);
-            this.isIframePreloaded = false;
-        }
     }
 
-    private sendSneezeProgressToIframe(): void {
-        if (this.iframe && this.iframe.contentWindow) {
-            try {
-                const cheekInflation = Math.min(this.sPresses * 0.1, 1);
-                this.iframe.contentWindow.postMessage({
-                    type: 'sneeze-progress',
-                    value: cheekInflation
-                }, '*');
-            } catch (e) {
-                console.error('Failed to send message to iframe:', e);
-            }
-        }
+    resetGameState(): void {
+        this.sPresses = 0;
     }
 
     private createBackground() {
-        // Create manga screentone pattern background
+        // Create simple background
         const graphics = this.add.graphics();
         graphics.fillStyle(0xf0f0f0);
         graphics.fillRect(0, 0, this.scale.width, this.scale.height);
 
-        // Add dot pattern
-        graphics.fillStyle(0x000000, 0.1);
-        for (let x = 0; x < this.scale.width; x += 8) {
-            for (let y = 0; y < this.scale.height; y += 8) {
-                graphics.fillCircle(x, y, 1);
-            }
-        }
-    }
-
-    private preloadIframeCharacter() {
-        if (this.isIframePreloaded) return;
-
-        // Get the game container element
-        const gameContainer = document.getElementById('game-container');
-        if (!gameContainer) {
-            console.error('Game container not found');
-            return;
-        }
-
-        // Create container for iframe - smaller and centered
-        this.iframeContainer = document.createElement('div');
-        this.iframeContainer.style.position = 'absolute';
-        this.iframeContainer.style.top = '50%';
-        this.iframeContainer.style.left = '50%';
-        this.iframeContainer.style.width = '300px';
-        this.iframeContainer.style.height = '300px';
-        this.iframeContainer.style.transform = 'translate(-50%, -50%)';
-        this.iframeContainer.style.pointerEvents = 'none';
-        this.iframeContainer.style.zIndex = '1';
-        this.iframeContainer.style.borderRadius = '15px';
-        this.iframeContainer.style.overflow = 'hidden';
-        this.iframeContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
-        this.iframeContainer.style.display = 'none'; // Hide initially
-
-        // Create iframe
-        this.iframe = document.createElement('iframe');
-        this.iframe.src = 'https://cloud.needle.tools/view/embed?file=BgpwFZ4L3mJ-Z4L3mJ-world';
-        this.iframe.title = 'Alana | Hosted on Needle Cloud';
-        this.iframe.style.width = '100%';
-        this.iframe.style.height = '100%';
-        this.iframe.style.border = 'none';
-        this.iframe.style.borderRadius = '15px';
-        this.iframe.referrerPolicy = 'no-referrer-when-downgrade';
-        this.iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
-        
-        // Add iframe to container
-        this.iframeContainer.appendChild(this.iframe);
-        gameContainer.appendChild(this.iframeContainer);
-        
-        this.isIframePreloaded = true;
-    }
-
-    private showIframeCharacter() {
-        if (!this.isIframePreloaded) {
-            this.preloadIframeCharacter();
-        }
-        if (this.iframeContainer) {
-            this.iframeContainer.style.display = 'block';
-        }
+        // Add a few decorative elements instead of thousands of dots
+        graphics.fillStyle(0x000000, 0.05);
+        graphics.fillRect(0, 0, this.scale.width, 100);
+        graphics.fillRect(0, this.scale.height - 100, this.scale.width, 100);
     }
 
     private createUI() {
@@ -226,18 +155,12 @@ export default class SneezeGame extends BaseMicrogame {
         const progress = Math.min(this.sPresses / this.WIN_THRESHOLD, 1);
         this.progressBar.width = 300 * progress;
 
-        // Update "Ah-" text size and color
-        const scale = 1 + (this.sPresses * 0.2);
+        // Update "Ah-" text scale only (more performant than changing fontSize)
+        const scale = 1 + (this.sPresses * 0.3);
         this.ahText.setScale(scale);
-        this.ahText.setFontSize(48 + (this.sPresses * 5));
-        
+
         if (this.sPresses > 7) {
             this.ahText.setColor('#ff6b6b');
-        }
-
-        // Send cheek inflation data to iframe (only if iframe exists)
-        if (this.iframe) {
-            this.sendSneezeProgressToIframe();
         }
 
         // Add blush effect when close
@@ -249,7 +172,7 @@ export default class SneezeGame extends BaseMicrogame {
     private triggerSneeze() {
         this.chooText.setVisible(true);
         this.chooText.setScale(0);
-        
+
         this.tweens.add({
             targets: this.chooText,
             scale: 1,
@@ -268,19 +191,6 @@ export default class SneezeGame extends BaseMicrogame {
     }
 
     protected showSuccessFeedback(): void {
-        // Show the preloaded iframe
-        this.showIframeCharacter();
-
-        // Send final sneeze message to iframe
-        this.sendSneezeProgressToIframe();
-
-        // Set up a timer to hide the iframe after 3 seconds
-        this.time.delayedCall(3000, () => {
-            if (this.iframeContainer) {
-                this.iframeContainer.style.display = 'none';
-            }
-        });
-
         const successText = this.add.text(this.scale.width / 2, this.scale.height / 2, 'ACHOO!', {
             fontSize: '48px',
             fontFamily: 'Arial Black, sans-serif',

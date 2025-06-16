@@ -101,6 +101,10 @@ export default class DodgeGame extends BaseMicrogame {
         }
     }
 
+    resetGameState(): void {
+        // No persistent state to reset
+    }
+
     protected onGameUpdate(time: number, delta: number): void {
         if (this.hasFailed || this.gameEnded) return;
 

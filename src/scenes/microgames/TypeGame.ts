@@ -86,9 +86,11 @@ export default class TypeGame extends BaseMicrogame {
      * Clean up keyboard listener
      */
     cleanupControls(): void {
-        if (this.input.keyboard && this.keyboardListener) {
-            this.input.keyboard.off('keydown', this.keyboardListener);
-        }
+        this.input.keyboard?.off('keydown');
+    }
+
+    resetGameState(): void {
+        // No persistent state to reset
     }
 
     /**

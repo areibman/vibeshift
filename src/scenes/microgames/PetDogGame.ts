@@ -44,7 +44,7 @@ export default class PetDogGame extends BaseMicrogame {
         // Dog body
         const body = this.add.ellipse(0, 50, 100, 80, 0xB5651D);
         const head = this.add.circle(0, 0, 45, 0xB5651D);
-        
+
         // Dog ears
         const leftEar = this.add.ellipse(-30, -25, 36, 60, 0xA0541A);
         const rightEar = this.add.ellipse(30, -25, 36, 60, 0xA0541A);
@@ -88,6 +88,12 @@ export default class PetDogGame extends BaseMicrogame {
         const keyboard = this.input.keyboard;
         if (!keyboard) return;
         keyboard.removeAllListeners();
+    }
+
+    resetGameState(): void {
+        this.pettingProgress = 0;
+        this.hearts = [];
+        this.isSpacePressed = false;
     }
 
     private addHeart(): void {

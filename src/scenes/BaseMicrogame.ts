@@ -55,6 +55,12 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
     abstract cleanupControls(): void;
 
     /**
+     * Reset game-specific state
+     * Called during init to ensure clean state between plays
+     */
+    abstract resetGameState(): void;
+
+    /**
      * Called every frame during gameplay
      * Override to add game-specific update logic
      */
@@ -69,12 +75,15 @@ export default abstract class BaseMicrogame extends Phaser.Scene {
         // Use the passed game state
         this.gameState = data.gameState;
 
-        // Reset game state
+        // Reset base game state
         this.hasWon = false;
         this.hasFailed = false;
         this.gameEnded = false;
         this.gameReady = false;
         this.timeRemaining = this.getGameDuration();
+
+        // Reset game-specific state
+        this.resetGameState();
     }
 
     /**

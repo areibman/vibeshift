@@ -86,9 +86,17 @@ export default class FruitSliceGame extends BaseMicrogame {
     }
 
     cleanupControls(): void {
-        const input = this.input;
-        if (!input) return;
-        input.removeAllListeners();
+        this.input.off('pointermove');
+        this.input.off('pointerdown');
+        this.input.off('pointerup');
+    }
+
+    resetGameState(): void {
+        this.fruitsSliced = 0;
+        this.fruits = [];
+        this.particles = [];
+        this.slashPoints = [];
+        this.isSlashing = false;
     }
 
     private spawnFruit(type: 'watermelon' | 'banana'): void {
@@ -139,7 +147,7 @@ export default class FruitSliceGame extends BaseMicrogame {
             const angle = (Math.PI * 2 * i) / 10;
             const speed = 2 + Math.random() * 3;
             const particle = this.add.rectangle(x, y, 4, 4, color);
-            
+
             this.particles.push({
                 sprite: particle,
                 x: particle.x,
@@ -162,7 +170,7 @@ export default class FruitSliceGame extends BaseMicrogame {
                     fruit.sliced = true;
                     fruit.sprite.destroy();
                     this.fruitsSliced++;
-                    
+
                     this.createJuiceParticles(
                         fruit.x,
                         fruit.y,

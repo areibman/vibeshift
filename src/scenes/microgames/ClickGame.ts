@@ -30,6 +30,10 @@ export default class ClickGame extends BaseMicrogame {
         this.input.off('pointerdown', this.handleClick, this);
     }
 
+    resetGameState(): void {
+        // No persistent state to reset
+    }
+
     protected onGameUpdate(time: number, delta: number): void {
         // No additional update logic needed
     }

@@ -77,9 +77,14 @@ export default class TerminalVirusGame extends BaseMicrogame {
     }
 
     cleanupControls(): void {
-        const keyboard = this.input.keyboard;
-        if (!keyboard) return;
-        keyboard.removeAllListeners();
+        this.input.keyboard?.off('keydown');
+    }
+
+    resetGameState(): void {
+        this.hexDump = '';
+        this.glitchText = 'VIRUS DETECTED';
+        this.payloadProgress = 0;
+        this.isCtrlPressed = false;
     }
 
     private updateHexDump(): void {
