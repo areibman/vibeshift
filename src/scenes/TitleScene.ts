@@ -29,6 +29,9 @@ export default class TitleScene extends Phaser.Scene {
         // Create debug button
         this.createDebugButton();
 
+        // Create blog button
+        this.createBlogButton();
+
         // Create decorative elements
         this.createDecorations();
 
@@ -220,6 +223,54 @@ export default class TitleScene extends Phaser.Scene {
             targets: text,
             alpha: { from: 0.7, to: 1 },
             duration: 1000,
+            ease: 'Sine.inOut',
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+    private createBlogButton() {
+        const blogButton = this.add.container(100, 50);
+
+        const bg = this.add.rectangle(0, 0, 130, 40, 0x4ECDC4, 0.8)
+            .setStrokeStyle(2, 0xFFE66D);
+
+        const text = this.add.text(0, 0, 'ABOUT', {
+            fontSize: '18px',
+            fontFamily: 'Arial Black, sans-serif',
+            color: '#FFFFFF'
+        }).setOrigin(0.5);
+
+        blogButton.add([bg, text]);
+
+        bg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                bg.setFillStyle(0xFFE66D, 0.8);
+                this.tweens.add({
+                    targets: blogButton,
+                    scaleX: 1.1,
+                    scaleY: 1.1,
+                    duration: 100
+                });
+            })
+            .on('pointerout', () => {
+                bg.setFillStyle(0x4ECDC4, 0.8);
+                this.tweens.add({
+                    targets: blogButton,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 100
+                });
+            })
+            .on('pointerdown', () => {
+                window.open('/blog.html', '_blank');
+            });
+
+        // Subtle pulse
+        this.tweens.add({
+            targets: bg,
+            alpha: { from: 0.6, to: 0.9 },
+            duration: 1500,
             ease: 'Sine.inOut',
             yoyo: true,
             repeat: -1
