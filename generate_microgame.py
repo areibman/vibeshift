@@ -16,8 +16,7 @@ import litellm
 import agentops
 from agentops.sdk.decorators import trace, agent, operation, tool
 
-agentops.init(api_key="f0887d0f-5198-45e0-a167-713eab851484",
-              trace_name="VibeWare Microgame Generator")
+agentops.init(trace_name="VibeWare Microgame Generator")
 
 
 @agent
