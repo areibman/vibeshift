@@ -76,7 +76,9 @@ CRITICAL REQUIREMENTS:
 15. TypeScript knows about Phaser properties through inheritance - you DON'T need to declare properties like 'add', 'physics', etc. They come from Phaser.Scene
 16. When creating game objects, always specify their types: e.g., private mySprite!: Phaser.GameObjects.Sprite
 17. All of this code is within a single file, so don't expect to import anything from other files as part of this creation process
-18. The textures, sprites, and graphics of this game must all be created within the file. Make sure they look good.
+18. The Sprites, and graphics of this game must all be created within the file. Make sure they look good.
+19. We don't have textures, so you'll need to draw graphics yourself.
+20. Upon winning a game, there should be some kind of victory animation or gag related to the game. Something funny and creative, not generic like a confetti explosion. Same thing for losing.
 
 Do not include any explanations, comments outside the code, or markdown code blocks. 
 Just output the pure TypeScript code."""
@@ -380,33 +382,35 @@ Generate the complete TypeScript code for this microgame. The class name should 
         return False
 
     @operation
-    def generate_game_ideas(self, model: str = "gpt-4o") -> List[Dict[str, str]]:
+    def generate_game_ideas(self, model: str = "gpt-4o", count: int = 1) -> List[Dict[str, str]]:
         """Generate creative game ideas using AI"""
 
-        prompt = """We are making our own version of Wario Ware. Please generate a microgame idea with the following:
+        prompt = f"""We are making our own version of Wario Ware. Please generate {count} unique microgame idea{"s" if count > 1 else ""} with the following:
 - Controls (we're using PC, so keyboard and mouse are the main options). You can be creative with the input types
 - Game objective - How do you win or lose?
 - What is the prompt that appears on the screen? At the beginning of the game, there should be a prompt that instructs the player what to do. i.e. Jump, Clean, Survive, etc.
 
 The games should all be very short in nature. i.e. 3-10 seconds. Clearly detail the description, style, and humor of the games. For style, name a color palette i.e. pixel art, classic, 3d, n64 graphics, etc.
 
-Format your response as a JSON object with the following fields:
-{
+Format your response as {"an array of JSON objects" if count > 1 else "a JSON object"} with the following fields:
+{"[" if count > 1 else ""}{{
   "name": "GameNameGame",
   "prompt": "ACTION!",
   "description": "Brief description of what happens",
   "controls": "How to control (e.g., Mouse, Keyboard, Arrow Keys)",
   "game_idea": "Detailed game concept including visual style, objective, and mechanics",
   "style": "Visual style and color palette"
-}
+}}{"]" if count > 1 else ""}
 
 IMPORTANT: 
 - Each name must end with "Game" and be a valid TypeScript class name (no spaces)
 - Prompts should be 1-2 words ending with !
 - Be creative and humorous like WarioWare games
-- Keep mechanics simple - remember players only have 3-5 seconds!"""
+- Keep mechanics simple - remember players only have 3-5 seconds!
+{"- Make sure each game idea is unique and different from the others" if count > 1 else ""}"""
 
-        print("🎨 Generating creative game ideas...")
+        print(
+            f"🎨 Generating {count} creative game idea{'s' if count > 1 else ''}...")
 
         try:
             response = litellm.completion(
@@ -432,13 +436,13 @@ IMPORTANT:
                 content = content.split("```")[1].split("```")[0]
 
             # Parse the JSON
-            game_idea = json.loads(content.strip())
+            game_ideas = json.loads(content.strip())
 
             # Handle single game idea (convert to list for compatibility)
-            if isinstance(game_idea, dict):
-                game_ideas = [game_idea]
+            if isinstance(game_ideas, dict):
+                game_ideas = [game_ideas]
             else:
-                game_ideas = game_idea
+                game_ideas = game_ideas
 
             if not isinstance(game_ideas, list) or len(game_ideas) == 0:
                 raise ValueError("Invalid response format")
@@ -461,10 +465,30 @@ def main():
                         help='Auto mode: Generate game ideas automatically')
     parser.add_argument('--model', type=str, default='gpt-4o',
                         help='AI model to use (default: gpt-4o)')
+    parser.add_argument('-n', '--count', type=int, default=1,
+                        help='Number of games to generate (default: 1, only works with --auto)')
     args = parser.parse_args()
 
     print("🎮 VibeWare Microgame Generator")
     print("=" * 40)
+
+    # Validate arguments
+    if args.count > 1 and not args.auto:
+        print("\n❌ Error: --count/-n can only be used with --auto mode")
+        print("   Example: python generate_microgame.py --auto -n 3")
+        return
+
+    if args.count < 1:
+        print("\n❌ Error: --count must be at least 1")
+        return
+
+    if args.count > 10:
+        print("\n⚠️  Warning: Generating more than 10 games at once may take a long time.")
+        confirm = input(
+            "Are you sure you want to continue? (y/N): ").strip().lower()
+        if confirm != 'y':
+            print("Cancelled.")
+            return
 
     # Check for API key
     if not os.environ.get('OPENAI_API_KEY') and not os.environ.get('ANTHROPIC_API_KEY') and not os.environ.get('GOOGLE_API_KEY'):
@@ -483,7 +507,7 @@ def main():
         print("Generating creative game ideas...\n")
 
         # Generate game ideas
-        game_ideas = generator.generate_game_ideas(args.model)
+        game_ideas = generator.generate_game_ideas(args.model, args.count)
 
         # Display all generated ideas
         print("\n📋 Generated Game Ideas:")
@@ -494,33 +518,78 @@ def main():
             print(f"   Description: {idea['description']}")
             print(f"   Style: {idea.get('style', 'Not specified')}")
 
-        # Select a random game
-        selected_game = random.choice(game_ideas)
-        print(f"\n🎲 Randomly selected: {selected_game['name']}")
-        print(f"   {selected_game['description']}")
+        # Generate the games
+        if args.count == 1:
+            # Select a random game for single generation
+            selected_game = random.choice(game_ideas)
+            print(f"\n🎲 Randomly selected: {selected_game['name']}")
+            print(f"   {selected_game['description']}")
 
-        # Generate the selected game
-        print("\n" + "=" * 60)
-        print(f"🎮 Generating {selected_game['name']}...")
-        print("=" * 60)
+            # Generate the selected game
+            print("\n" + "=" * 60)
+            print(f"🎮 Generating {selected_game['name']}...")
+            print("=" * 60)
 
-        success = generator.generate_microgame(
-            name=selected_game['name'],
-            prompt=selected_game['prompt'],
-            description=selected_game['description'],
-            controls=selected_game['controls'],
-            game_idea=selected_game['game_idea'],
-            model=args.model
-        )
+            success = generator.generate_microgame(
+                name=selected_game['name'],
+                prompt=selected_game['prompt'],
+                description=selected_game['description'],
+                controls=selected_game['controls'],
+                game_idea=selected_game['game_idea'],
+                model=args.model
+            )
 
-        if success:
-            print(f"\n🎉 Auto-generated game complete!")
-            print(f"\nGame Details:")
-            print(f"- Name: {selected_game['name']}")
-            print(f"- Prompt: {selected_game['prompt']}")
-            print(f"- Description: {selected_game['description']}")
-            print(f"- Controls: {selected_game['controls']}")
-            print(f"- Style: {selected_game.get('style', 'Not specified')}")
+            if success:
+                print(f"\n🎉 Auto-generated game complete!")
+                print(f"\nGame Details:")
+                print(f"- Name: {selected_game['name']}")
+                print(f"- Prompt: {selected_game['prompt']}")
+                print(f"- Description: {selected_game['description']}")
+                print(f"- Controls: {selected_game['controls']}")
+                print(
+                    f"- Style: {selected_game.get('style', 'Not specified')}")
+        else:
+            # Generate all games when count > 1
+            print(f"\n🎮 Generating {len(game_ideas)} games...")
+            print("=" * 60)
+
+            successful_games = []
+            failed_games = []
+
+            for i, game in enumerate(game_ideas, 1):
+                print(f"\n[{i}/{len(game_ideas)}] Generating {game['name']}...")
+                print("-" * 40)
+
+                success = generator.generate_microgame(
+                    name=game['name'],
+                    prompt=game['prompt'],
+                    description=game['description'],
+                    controls=game['controls'],
+                    game_idea=game['game_idea'],
+                    model=args.model
+                )
+
+                if success:
+                    successful_games.append(game['name'])
+                else:
+                    failed_games.append(game['name'])
+
+            # Summary
+            print("\n" + "=" * 60)
+            print("🎯 GENERATION SUMMARY")
+            print("=" * 60)
+            print(f"\n✅ Successfully generated: {len(successful_games)} games")
+            if successful_games:
+                for game in successful_games:
+                    print(f"   - {game}")
+
+            if failed_games:
+                print(f"\n❌ Failed to generate: {len(failed_games)} games")
+                for game in failed_games:
+                    print(f"   - {game}")
+
+            print(
+                f"\n🎉 Batch generation complete! ({len(successful_games)}/{len(game_ideas)} successful)")
 
     else:
         # WIZARD MODE (existing interactive mode)
