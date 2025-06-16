@@ -28,7 +28,6 @@ export default class FruitSliceGame extends BaseMicrogame {
     private particles: Particle[] = [];
     private slashPoints: Phaser.Math.Vector2[] = [];
     private slashGraphics!: Phaser.GameObjects.Graphics;
-    private isSlashing: boolean = false;
     private fruitsSliced: number = 0;
 
     constructor() {
@@ -56,7 +55,7 @@ export default class FruitSliceGame extends BaseMicrogame {
         this.spawnFruit('watermelon');
 
         // Add instruction text
-        this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 100, 'Drag mouse to slice all fruits!', {
+        this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 100, 'Move cursor over fruits to slice them!', {
             fontFamily: 'Arial',
             fontSize: '24px',
             color: '#000000'
@@ -67,28 +66,22 @@ export default class FruitSliceGame extends BaseMicrogame {
         const input = this.input;
         if (!input) return;
 
-        input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            this.isSlashing = true;
-            this.slashPoints = [new Phaser.Math.Vector2(pointer.x, pointer.y)];
-        });
-
         input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            if (this.isSlashing) {
-                this.slashPoints.push(new Phaser.Math.Vector2(pointer.x, pointer.y));
-                this.checkSlashCollisions(pointer.x, pointer.y);
-            }
-        });
+            // Always check for collisions on mouse movement
+            this.checkSlashCollisions(pointer.x, pointer.y);
 
-        input.on('pointerup', () => {
-            this.isSlashing = false;
-            this.slashPoints = [];
+            // Add to slash trail for visual feedback
+            this.slashPoints.push(new Phaser.Math.Vector2(pointer.x, pointer.y));
+
+            // Keep trail short
+            if (this.slashPoints.length > 10) {
+                this.slashPoints.shift();
+            }
         });
     }
 
     cleanupControls(): void {
         this.input.off('pointermove');
-        this.input.off('pointerdown');
-        this.input.off('pointerup');
     }
 
     resetGameState(): void {
@@ -96,13 +89,12 @@ export default class FruitSliceGame extends BaseMicrogame {
         this.fruits = [];
         this.particles = [];
         this.slashPoints = [];
-        this.isSlashing = false;
     }
 
     private spawnFruit(type: 'watermelon' | 'banana'): void {
         const container = this.add.container(
             Math.random() * (GAME_WIDTH - 100) + 50,
-            GAME_HEIGHT + 50
+            GAME_HEIGHT - 50  // Start fruits higher up so they're visible sooner
         );
 
         // Create fruit shape
@@ -133,8 +125,8 @@ export default class FruitSliceGame extends BaseMicrogame {
             sprite: container,
             x: container.x,
             y: container.y,
-            vx: (Math.random() - 0.5) * 4,
-            vy: -15,
+            vx: (Math.random() - 0.5) * 2,  // Reduced horizontal speed
+            vy: -18,  // Slightly reduced upward velocity
             type,
             sliced: false,
             rotation: Math.random() * Math.PI * 2,
@@ -166,7 +158,7 @@ export default class FruitSliceGame extends BaseMicrogame {
                 const dy = y - fruit.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance < 50) {
+                if (distance < 70) {  // Increased collision radius for easier slicing
                     fruit.sliced = true;
                     fruit.sprite.destroy();
                     this.fruitsSliced++;
@@ -189,7 +181,7 @@ export default class FruitSliceGame extends BaseMicrogame {
         // Update fruits
         this.fruits.forEach(fruit => {
             if (!fruit.sliced) {
-                fruit.vy += 0.5; // gravity
+                fruit.vy += 0.3; // reduced gravity for longer air time
                 fruit.x += fruit.vx;
                 fruit.y += fruit.vy;
                 fruit.rotation += fruit.rotationSpeed;
@@ -220,7 +212,7 @@ export default class FruitSliceGame extends BaseMicrogame {
         });
 
         // Draw slash trail
-        if (this.isSlashing && this.slashPoints.length > 1) {
+        if (this.slashPoints.length > 1) {
             this.slashGraphics.clear();
             this.slashGraphics.lineStyle(3, 0xFFFFFF, 0.8);
             this.slashGraphics.beginPath();
@@ -231,11 +223,6 @@ export default class FruitSliceGame extends BaseMicrogame {
             }
 
             this.slashGraphics.strokePath();
-
-            // Trim old points
-            if (this.slashPoints.length > 10) {
-                this.slashPoints.shift();
-            }
         } else {
             this.slashGraphics.clear();
         }
