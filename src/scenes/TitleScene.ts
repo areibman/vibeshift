@@ -43,14 +43,14 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     private createAnimatedBackground() {
-        // Create gradient background
+        // Create a bright, fun gradient background
         const graphics = this.add.graphics();
 
-        // Draw gradient
+        // Draw a vibrant gradient using fun colors
         for (let i = 0; i < GAME_HEIGHT; i++) {
             const color = Phaser.Display.Color.Interpolate.ColorWithColor(
-                Phaser.Display.Color.ValueToColor(COLORS.background),
-                Phaser.Display.Color.ValueToColor(0x1a1a1a),
+                Phaser.Display.Color.ValueToColor(0xFF6EC7),  // Bright pink
+                Phaser.Display.Color.ValueToColor(0x74D0F1),  // Sky blue
                 GAME_HEIGHT,
                 i
             );
@@ -58,27 +58,109 @@ export default class TitleScene extends Phaser.Scene {
             graphics.fillRect(0, i, GAME_WIDTH, 1);
         }
 
-        // Add floating particles
+        // Create a repeating pattern texture
+        const patternGraphics = this.make.graphics({});
+        const patternSize = 60;
+
+        // Draw fun pattern elements
+        patternGraphics.fillStyle(0xFFE66D, 0.15); // Yellow circles
+        patternGraphics.fillCircle(patternSize / 4, patternSize / 4, 12);
+        patternGraphics.fillCircle(patternSize * 3 / 4, patternSize * 3 / 4, 12);
+
+        patternGraphics.fillStyle(0x4ECDC4, 0.15); // Teal diamonds
+        patternGraphics.fillTriangle(
+            patternSize / 2, patternSize / 4 - 8,
+            patternSize / 2 - 8, patternSize / 2,
+            patternSize / 2 + 8, patternSize / 2
+        );
+        patternGraphics.fillTriangle(
+            patternSize / 2, patternSize * 3 / 4 + 8,
+            patternSize / 2 - 8, patternSize / 2,
+            patternSize / 2 + 8, patternSize / 2
+        );
+
+        patternGraphics.fillStyle(0xFF6B6B, 0.1); // Red squares
+        patternGraphics.fillRect(5, 5, 10, 10);
+        patternGraphics.fillRect(patternSize - 15, patternSize - 15, 10, 10);
+
+        // Generate texture from pattern
+        patternGraphics.generateTexture('bgPattern', patternSize, patternSize);
+        patternGraphics.destroy();
+
+        // Create tiling sprite for the pattern
+        const tilingSprite = this.add.tileSprite(
+            GAME_WIDTH / 2,
+            GAME_HEIGHT / 2,
+            GAME_WIDTH * 1.5,  // Make it wider for diagonal movement
+            GAME_HEIGHT * 1.5, // Make it taller for diagonal movement
+            'bgPattern'
+        );
+        tilingSprite.setAlpha(0.5);
+        tilingSprite.setAngle(-15); // Slight angle for more dynamic feel
+
+        // Animate the pattern movement
+        this.tweens.add({
+            targets: tilingSprite,
+            tilePositionX: '+=100',
+            tilePositionY: '+=100',
+            duration: 10000,
+            repeat: -1,
+            ease: 'Linear'
+        });
+
+        // Add colorful floating bubbles/particles
         const particleConfig: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig = {
             x: { min: 0, max: GAME_WIDTH },
             y: GAME_HEIGHT + 20,
             lifespan: 8000,
             speedY: { min: -80, max: -40 },
             speedX: { min: -20, max: 20 },
-            scale: { start: 0.5, end: 0 },
-            alpha: { start: 0.6, end: 0 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 0.7, end: 0 },
             frequency: 100,
-            tint: [COLORS.primary, COLORS.secondary, COLORS.tertiary, COLORS.quaternary]
+            tint: [0xFF6EC7, 0xFFE66D, 0x4ECDC4, 0x95E1D3, 0xFF6B6B]
         };
 
-        this.add.particles(0, 0, 'flare', particleConfig);
+        // Create bubble particles
+        const bubbleGraphics = this.make.graphics({});
+        bubbleGraphics.fillStyle(0xffffff);
+        bubbleGraphics.fillCircle(8, 8, 8);
+        bubbleGraphics.generateTexture('bubble', 16, 16);
+        bubbleGraphics.destroy();
 
-        // Create simple colored squares as particles since we don't have textures yet
-        const particleGraphics = this.make.graphics({});
-        particleGraphics.fillStyle(0xffffff);
-        particleGraphics.fillRect(0, 0, 8, 8);
-        particleGraphics.generateTexture('flare', 8, 8);
-        particleGraphics.destroy();
+        this.add.particles(0, 0, 'bubble', particleConfig);
+
+        // Add some animated floating shapes in the background
+        for (let i = 0; i < 5; i++) {
+            const x = Phaser.Math.Between(100, GAME_WIDTH - 100);
+            const y = Phaser.Math.Between(100, GAME_HEIGHT - 100);
+            const size = Phaser.Math.Between(30, 60);
+            const color = Phaser.Utils.Array.GetRandom([0xFFE66D, 0x4ECDC4, 0xFF6B6B, 0x95E1D3]);
+
+            const floatingShape = this.add.circle(x, y, size, color, 0.1);
+
+            // Float animation
+            this.tweens.add({
+                targets: floatingShape,
+                y: y - 30,
+                x: x + Phaser.Math.Between(-20, 20),
+                duration: Phaser.Math.Between(2000, 4000),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // Pulse animation
+            this.tweens.add({
+                targets: floatingShape,
+                scale: { from: 1, to: 1.2 },
+                alpha: { from: 0.1, to: 0.2 },
+                duration: Phaser.Math.Between(1500, 3000),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
     }
 
     private createTitle() {
@@ -95,7 +177,8 @@ export default class TitleScene extends Phaser.Scene {
                 color: '#000000',
                 blur: 0,
                 fill: true
-            }
+            },
+            resolution: 2
         }).setOrigin(0.5);
 
         // Subtitle
@@ -104,7 +187,8 @@ export default class TitleScene extends Phaser.Scene {
             fontFamily: 'Arial, sans-serif',
             color: '#FFE66D',
             stroke: '#000000',
-            strokeThickness: 4
+            strokeThickness: 4,
+            resolution: 2
         }).setOrigin(0.5);
 
         // Title animations
@@ -145,7 +229,8 @@ export default class TitleScene extends Phaser.Scene {
             fontFamily: 'Arial Black, sans-serif',
             color: '#FFFFFF',
             stroke: '#000000',
-            strokeThickness: 4
+            strokeThickness: 4,
+            resolution: 2
         }).setOrigin(0.5);
 
         this.startButton.add([buttonBg, buttonText]);
@@ -192,7 +277,8 @@ export default class TitleScene extends Phaser.Scene {
         const text = this.add.text(0, 0, 'DEBUG [D]', {
             fontSize: '18px',
             fontFamily: 'Arial Black, sans-serif',
-            color: '#00FF00'
+            color: '#00FF00',
+            resolution: 2
         }).setOrigin(0.5);
 
         debugButton.add([bg, text]);
@@ -238,7 +324,8 @@ export default class TitleScene extends Phaser.Scene {
         const text = this.add.text(0, 0, 'ABOUT', {
             fontSize: '18px',
             fontFamily: 'Arial Black, sans-serif',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            resolution: 2
         }).setOrigin(0.5);
 
         blogButton.add([bg, text]);
@@ -331,7 +418,8 @@ export default class TitleScene extends Phaser.Scene {
             fontFamily: 'Arial, sans-serif',
             color: '#FFFFFF',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 3,
+            resolution: 2
         }).setOrigin(0.5).setAlpha(0.8);
     }
 
