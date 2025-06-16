@@ -67,7 +67,7 @@ export const MICROGAME_METADATA = [
         name: 'Stop the Virus',
         prompt: 'TERMINATE!',
         description: 'Press Ctrl+C to stop the virus',
-        controls: 'Keyboard: Press Ctrl+C'
+        controls: 'Keyboard: Type letters, Backspace to delete'
     },
     {
         key: 'PetDogGame',
