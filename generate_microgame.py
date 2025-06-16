@@ -7,8 +7,11 @@ Uses a cleaner registry system instead of regex editing
 import os
 import sys
 import subprocess
+import argparse
+import random
+import json
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 import litellm
 import agentops
 from agentops.sdk.decorators import trace, agent, operation
@@ -19,7 +22,7 @@ agentops.init(api_key="f0887d0f-5198-45e0-a167-713eab851484",
 
 @agent
 class MicrogameGenerator:
-    def __init__(self, max_retries: int = 3):
+    def __init__(self, max_retries: int = 10):
         self.max_retries = max_retries
         self.base_path = Path(__file__).parent
         self.context_files = self._load_context_files()
@@ -78,22 +81,33 @@ Just output the pure TypeScript code."""
             # Save original content for rollback
             original_content = content
 
-            # Add import at the marker
-            import_line = f"import {game_name} from './{game_name}';"
+            # Check if game already exists
+            if f"import {game_name}" in content:
+                print(
+                    f"⚠️  {game_name} already exists in registry, skipping...")
+                return False
+
+            # Add game to MICROGAME_SCENES array
             content = content.replace(
                 "// NEW_GAME_MARKER - Do not remove this comment",
                 f"{game_name},\n    // NEW_GAME_MARKER - Do not remove this comment"
             )
 
             # Add the import after the last import
+            import_line = f"import {game_name} from './{game_name}';"
             last_import_pos = content.rfind("import")
             if last_import_pos != -1:
                 end_of_line = content.find('\n', last_import_pos)
                 content = content[:end_of_line+1] + \
                     import_line + '\n' + content[end_of_line+1:]
 
-            # Add metadata at the marker
-            metadata_entry = f"""    {{
+            # Check if metadata already exists
+            if f"key: '{game_name}'" in content:
+                print(
+                    f"⚠️  Metadata for {game_name} already exists, skipping metadata addition...")
+            else:
+                # Add metadata at the marker
+                metadata_entry = f"""    {{
         key: '{game_name}',
         name: '{game_info['name']}',
         prompt: '{game_info['prompt']}',
@@ -101,10 +115,10 @@ Just output the pure TypeScript code."""
         controls: '{game_info['controls']}'
     }},"""
 
-            content = content.replace(
-                "    // NEW_METADATA_MARKER - Do not remove this comment",
-                f"{metadata_entry}\n    // NEW_METADATA_MARKER - Do not remove this comment"
-            )
+                content = content.replace(
+                    "    // NEW_METADATA_MARKER - Do not remove this comment",
+                    f"{metadata_entry}\n    // NEW_METADATA_MARKER - Do not remove this comment"
+                )
 
             with open(registry_path, 'w') as f:
                 f.write(content)
@@ -141,7 +155,14 @@ Just output the pure TypeScript code."""
                     skip_lines -= 1
                     continue
 
-                if f"key: '{game_name}'" in line:
+                # Look for entries with the key field OR entries with the game name (handling both cases)
+                display_name = game_name.replace('Game', ' Game')
+                formatted_name = ' '.join(
+                    word.capitalize() for word in display_name.replace('_', ' ').split())
+
+                if (f"key: '{game_name}'" in line or
+                    (f"name: '{formatted_name}'" in line and i + 1 < len(lines) and
+                     "prompt:" in lines[i + 1])):
                     # Find the start of this metadata block (go back to find the opening brace)
                     j = i
                     while j >= 0 and '{' not in lines[j]:
@@ -232,6 +253,7 @@ Generate the complete TypeScript code for this microgame. The class name should 
                     max_tokens=2000
                 )
 
+                # type: ignore
                 generated_code = response.choices[0].message.content
                 if not generated_code:
                     print("❌ No code generated in response")
@@ -255,37 +277,42 @@ Generate the complete TypeScript code for this microgame. The class name should 
 
                 print(f"✅ Code generated and saved to {output_path}")
 
-                # Format the display name
-                display_name = name.replace('Game', ' Game')
-                display_name = ' '.join(
-                    word.capitalize() for word in display_name.replace('_', ' ').split())
-
-                game_info = {
-                    "name": display_name,
-                    "prompt": prompt,
-                    "description": description,
-                    "controls": controls
-                }
-
-                if not self._update_registry(name, game_info):
-                    print("❌ Failed to update registry")
-                    # Delete the generated file
-                    if output_path.exists():
-                        output_path.unlink()
-                        print(f"🗑️  Deleted generated file: {output_path}")
-                    continue
-
-                # Validate the game
+                # Validate the game BEFORE updating registry
                 print("\n🔍 Running validation...")
                 success, validation_output = self._validate_game(name)
                 print(validation_output)
 
                 if success:
-                    print(f"\n✅ {name} successfully generated and validated!")
-                    print("\n🎮 You can now test your game by running: npm run dev")
-                    print(
-                        "   Then press 'D' on the title screen to access the debug menu")
-                    return True
+                    # Only update registry if validation passed
+                    print("\n✅ Validation passed! Updating registry...")
+
+                    # Format the display name
+                    display_name = name.replace('Game', ' Game')
+                    display_name = ' '.join(
+                        word.capitalize() for word in display_name.replace('_', ' ').split())
+
+                    game_info = {
+                        "name": display_name,
+                        "prompt": prompt,
+                        "description": description,
+                        "controls": controls
+                    }
+
+                    if self._update_registry(name, game_info):
+                        print(
+                            f"\n✅ {name} successfully generated and validated!")
+                        print(
+                            "\n🎮 You can now test your game by running: npm run dev")
+                        print(
+                            "   Then press 'D' on the title screen to access the debug menu")
+                        return True
+                    else:
+                        print("❌ Failed to update registry")
+                        # Delete the generated file since registry update failed
+                        if output_path.exists():
+                            output_path.unlink()
+                            print(f"🗑️  Deleted generated file: {output_path}")
+                        continue
                 else:
                     print(f"\n❌ Validation failed, cleaning up and retrying...")
 
@@ -293,9 +320,6 @@ Generate the complete TypeScript code for this microgame. The class name should 
                     if output_path.exists():
                         output_path.unlink()
                         print(f"🗑️  Deleted failed file: {output_path}")
-
-                    # Rollback registry changes
-                    self._rollback_registry(name)
 
                     # Add the generated code and error to message history
                     messages.append(
@@ -327,9 +351,98 @@ Generate the full file again with all corrections applied."""
             f"\n❌ Failed to generate valid {name} after {self.max_retries} attempts")
         return False
 
+    @operation
+    def generate_game_ideas(self, model: str = "gpt-4o") -> List[Dict[str, str]]:
+        """Generate creative game ideas using AI"""
+
+        prompt = """We are making our own version of Wario Ware. Please generate a microgame idea with the following:
+- Controls (we're using PC, so keyboard and mouse are the main options). You can be creative with the input types
+- Game objective - How do you win or lose?
+- What is the prompt that appears on the screen? At the beginning of the game, there should be a prompt that instructs the player what to do. i.e. Jump, Clean, Survive, etc.
+
+The games should all be very short in nature. i.e. 3-10 seconds. Clearly detail the description, style, and humor of the games. For style, name a color palette i.e. pixel art, classic, 3d, n64 graphics, etc.
+
+Format your response as a JSON object with the following fields:
+{
+  "name": "GameNameGame",
+  "prompt": "ACTION!",
+  "description": "Brief description of what happens",
+  "controls": "How to control (e.g., Mouse: Click on targets)",
+  "game_idea": "Detailed game concept including visual style, objective, and mechanics",
+  "style": "Visual style and color palette"
+}
+
+IMPORTANT: 
+- Each name must end with "Game" and be a valid TypeScript class name (no spaces)
+- Prompts should be 1-2 words ending with !
+- Be creative and humorous like WarioWare games
+- Keep mechanics simple - remember players only have 3-5 seconds!"""
+
+        print("🎨 Generating creative game ideas...")
+
+        try:
+            response = litellm.completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a creative game designer specializing in quick, funny microgames like WarioWare. Respond only with valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+            )
+
+            # Get content from response - handle different response formats
+            if hasattr(response, 'choices'):
+                content = response.choices[0].message.content  # type: ignore
+            else:
+                content = str(response)
+            if not content:
+                raise ValueError("No content generated")
+
+            # Clean up the response if it has markdown
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0]
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0]
+
+            # Parse the JSON
+            game_idea = json.loads(content.strip())
+
+            # Handle single game idea (convert to list for compatibility)
+            if isinstance(game_idea, dict):
+                game_ideas = [game_idea]
+            else:
+                game_ideas = game_idea
+
+            if not isinstance(game_ideas, list) or len(game_ideas) == 0:
+                raise ValueError("Invalid response format")
+
+            print(f"✅ Generated {len(game_ideas)} game idea(s)!")
+            return game_ideas
+
+        except Exception as e:
+            print(f"❌ Error generating game ideas: {e}")
+            # Return a fallback game idea
+            return [{
+                "name": "ButtonMashGame",
+                "prompt": "MASH!",
+                "description": "Mash the spacebar as fast as possible",
+                "controls": "Keyboard: Press spacebar repeatedly",
+                "game_idea": "A simple button mashing game where players need to press spacebar 20 times in 3 seconds. The screen shows a progress bar that fills up with each press. Retro pixel art style with bright colors.",
+                "style": "Pixel art with bright neon colors"
+            }]
+
 
 def main():
-    """Interactive microgame generator"""
+    """Microgame generator with wizard and auto modes"""
+
+    # Set up argument parser
+    parser = argparse.ArgumentParser(
+        description='VibeWare Microgame Generator')
+    parser.add_argument('--auto', action='store_true',
+                        help='Auto mode: Generate game ideas automatically')
+    parser.add_argument('--model', type=str, default='gpt-4o',
+                        help='AI model to use (default: gpt-4o)')
+    args = parser.parse_args()
+
     print("🎮 VibeWare Microgame Generator")
     print("=" * 40)
 
@@ -342,52 +455,102 @@ def main():
         print("  export GOOGLE_API_KEY='your-key-here' (for Gemini)")
         print("\nOr you can set a custom model that doesn't require these keys.\n")
 
-    # Get game details from user
-    print("\nEnter microgame details:")
-    name = input("Game class name (e.g., ClickGame): ").strip()
-    if not name:
-        print("❌ Name is required")
-        return
-
-    # Ensure name ends with "Game" for consistency
-    if not name.endswith("Game"):
-        name += "Game"
-        print(f"📝 Updated name to: {name}")
-
-    prompt = input("Player prompt (e.g., CLICK!): ").strip().upper()
-    if not prompt.endswith("!"):
-        prompt += "!"
-
-    description = input("Game description: ").strip()
-    controls = input("Controls (e.g., Mouse: Click on targets): ").strip()
-    game_idea = input("Detailed game concept: ").strip()
-
-    # Model selection
-    print("\nSelect AI model:")
-    print("1. GPT-4o (default, requires OPENAI_API_KEY)")
-    print("2. Claude 3.7 Sonnet (requires ANTHROPIC_API_KEY)")
-    print("3. Gemini 2.5 Pro (requires GOOGLE_API_KEY)")
-    print("4. Custom (enter your own)")
-
-    model_choice = input("\nChoice [1]: ").strip() or "1"
-
-    model_map = {
-        "1": "gpt-4o",
-        "2": "claude-3-7-sonnet-latest",
-        "3": "gemini-2.5-pro-exp-03-25",
-        "4": None
-    }
-
-    model = model_map.get(model_choice)
-    if model is None and model_choice == "4":
-        model = input("Enter model name: ").strip()
-    elif model is None:
-        model = "gpt-4o"
-
-    # Generate the game
     generator = MicrogameGenerator()
-    generator.generate_microgame(
-        name, prompt, description, controls, game_idea, model)
+
+    if args.auto:
+        # AUTO MODE
+        print("\n🤖 Running in AUTO mode")
+        print("Generating creative game ideas...\n")
+
+        # Generate game ideas
+        game_ideas = generator.generate_game_ideas(args.model)
+
+        # Display all generated ideas
+        print("\n📋 Generated Game Ideas:")
+        print("-" * 60)
+        for i, idea in enumerate(game_ideas, 1):
+            print(f"\n{i}. {idea['name']}")
+            print(f"   Prompt: {idea['prompt']}")
+            print(f"   Description: {idea['description']}")
+            print(f"   Style: {idea.get('style', 'Not specified')}")
+
+        # Select a random game
+        selected_game = random.choice(game_ideas)
+        print(f"\n🎲 Randomly selected: {selected_game['name']}")
+        print(f"   {selected_game['description']}")
+
+        # Generate the selected game
+        print("\n" + "=" * 60)
+        print(f"🎮 Generating {selected_game['name']}...")
+        print("=" * 60)
+
+        success = generator.generate_microgame(
+            name=selected_game['name'],
+            prompt=selected_game['prompt'],
+            description=selected_game['description'],
+            controls=selected_game['controls'],
+            game_idea=selected_game['game_idea'],
+            model=args.model
+        )
+
+        if success:
+            print(f"\n🎉 Auto-generated game complete!")
+            print(f"\nGame Details:")
+            print(f"- Name: {selected_game['name']}")
+            print(f"- Prompt: {selected_game['prompt']}")
+            print(f"- Description: {selected_game['description']}")
+            print(f"- Controls: {selected_game['controls']}")
+            print(f"- Style: {selected_game.get('style', 'Not specified')}")
+
+    else:
+        # WIZARD MODE (existing interactive mode)
+        print("\n🧙 Running in WIZARD mode")
+        print("Enter microgame details interactively...\n")
+
+        # Get game details from user
+        name = input("Game class name (e.g., ClickGame): ").strip()
+        if not name:
+            print("❌ Name is required")
+            return
+
+        # Ensure name ends with "Game" for consistency
+        if not name.endswith("Game"):
+            name += "Game"
+            print(f"📝 Updated name to: {name}")
+
+        prompt = input("Player prompt (e.g., CLICK!): ").strip().upper()
+        if not prompt.endswith("!"):
+            prompt += "!"
+
+        description = input("Game description: ").strip()
+        controls = input("Controls (e.g., Mouse: Click on targets): ").strip()
+        game_idea = input("Detailed game concept: ").strip()
+
+        # Model selection
+        print("\nSelect AI model:")
+        print("1. GPT-4o (default, requires OPENAI_API_KEY)")
+        print("2. Claude 3.7 Sonnet (requires ANTHROPIC_API_KEY)")
+        print("3. Gemini 2.5 Pro (requires GOOGLE_API_KEY)")
+        print("4. Custom (enter your own)")
+
+        model_choice = input("\nChoice [1]: ").strip() or "1"
+
+        model_map = {
+            "1": "gpt-4o",
+            "2": "claude-3-7-sonnet-latest",
+            "3": "gemini-2.5-pro-exp-03-25",
+            "4": None
+        }
+
+        model = model_map.get(model_choice)
+        if model is None and model_choice == "4":
+            model = input("Enter model name: ").strip()
+        elif model is None:
+            model = "gpt-4o"
+
+        # Generate the game
+        generator.generate_microgame(
+            name, prompt, description, controls, game_idea, model)
 
 
 if __name__ == "__main__":
