@@ -51,11 +51,47 @@ export default class SneezeShieldGame extends BaseMicrogame {
         this.face = this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2, 150, 200, 0xFFE4B2);
         this.nose = this.add.ellipse(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30, 50, 70, 0xFFCC99);
 
+        // Add eyes
+        const leftEye = this.add.ellipse(GAME_WIDTH / 2 - 35, GAME_HEIGHT / 2 - 20, 25, 30, 0xFFFFFF);
+        const rightEye = this.add.ellipse(GAME_WIDTH / 2 + 35, GAME_HEIGHT / 2 - 20, 25, 30, 0xFFFFFF);
+
+        // Add pupils
+        const leftPupil = this.add.circle(GAME_WIDTH / 2 - 35, GAME_HEIGHT / 2 - 20, 8, 0x000000);
+        const rightPupil = this.add.circle(GAME_WIDTH / 2 + 35, GAME_HEIGHT / 2 - 20, 8, 0x000000);
+
+        // Add eyebrows for expression
+        const leftEyebrow = this.add.rectangle(GAME_WIDTH / 2 - 35, GAME_HEIGHT / 2 - 45, 30, 4, 0x8B4513);
+        const rightEyebrow = this.add.rectangle(GAME_WIDTH / 2 + 35, GAME_HEIGHT / 2 - 45, 30, 4, 0x8B4513);
+
+        // Add a worried mouth
+        const mouth = this.add.arc(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 70, 30, 180, 0, false, 0xDD6666);
+        mouth.setStrokeStyle(3, 0xDD6666);
+
         // Add twitch animation to the face
         this.tweens.add({
             targets: this.face,
             x: '+=10',
             duration: 100,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Add nervous eye movement
+        this.tweens.add({
+            targets: [leftPupil, rightPupil],
+            x: '+=5',
+            duration: 200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // Eyebrow twitch for worried expression
+        this.tweens.add({
+            targets: [leftEyebrow, rightEyebrow],
+            angle: { from: -5, to: 5 },
+            duration: 150,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
