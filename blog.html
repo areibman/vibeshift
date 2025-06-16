@@ -452,6 +452,154 @@
       </div>
     </section>
 
+    <!-- Technical Deep Dive Section -->
+    <section class="section">
+      <h2 style="color: #95E1D3;">Technical Deep Dive: The AI Generation Process</h2>
+      
+      <p>
+        The magic behind VibeWare lies in its sophisticated AI-driven game generation pipeline. Here's how our 
+        AI agent transforms a simple verb prompt into a fully functional microgame:
+      </p>
+
+      <div class="feature-card" style="margin: 2rem 0;">
+        <h3>📋 Step 1: The BaseMicrogame Template</h3>
+        <p>
+          Every microgame in VibeWare extends a base class that provides the core framework. This ensures 
+          consistency across all games while giving the AI a structured template to work with:
+        </p>
+        <div class="code-block">
+          <pre>export default abstract class BaseMicrogame extends Phaser.Scene {
+    // Core game state management
+    protected gameState!: GameState;
+    protected timeRemaining: number = 5000;
+    protected hasWon: boolean = false;
+    
+    // Abstract methods the AI must implement
+    abstract getPrompt(): string;           // e.g., "FLICK!"
+    abstract getGameDuration(): number;     // Usually 3-5 seconds
+    abstract setupGame(): void;             // Create game objects
+    abstract setupControls(): void;         // Handle input
+    abstract cleanupControls(): void;       // Clean up listeners
+    abstract resetGameState(): void;        // Reset for replay
+}</pre>
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin: 2rem 0;">
+        <h3>🧠 Step 2: AI Analysis & Learning</h3>
+        <p>
+          The AI agent studies the base template and reads through example games to understand the patterns. 
+          It learns how successful microgames structure their code, handle physics, manage win/lose conditions, 
+          and create engaging visual feedback:
+        </p>
+        <div class="code-block">
+          <pre>// AI reads examples like FlickThePickleGame
+export default class FlickThePickleGame extends BaseMicrogame {
+    private pickle!: Phaser.GameObjects.Ellipse;
+    
+    getPrompt(): string { return 'FLICK!'; }
+    
+    setupGame(): void {
+        this.createPickle();
+        // AI learns: games need visual objects
+    }
+    
+    setupControls(): void {
+        this.input.on('pointerdown', this.flickPickle, this);
+        // AI learns: games need input handling
+    }
+}</pre>
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin: 2rem 0;">
+        <h3>💡 Step 3: Creative Brainstorming</h3>
+        <p>
+          Given a verb prompt (like "CATCH", "DODGE", or "SNEEZE"), the AI agent brainstorms a game concept. 
+          It considers physics, visual metaphors, and player interactions that match the verb's action:
+        </p>
+        <div class="code-block">
+          <pre>AI Thought Process:
+Prompt: "SNEEZE"
+→ Brainstorm: What involves sneezing?
+→ Concept: Player must fake a sneeze by covering their face
+→ Mechanic: Click and hold to cover mouth/nose
+→ Win condition: Successfully "sneeze" before time runs out
+→ Visual: Face sprite, hands, particle effects</pre>
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin: 2rem 0;">
+        <h3>⚙️ Step 4: Code Generation</h3>
+        <p>
+          The AI generates complete TypeScript code that extends BaseMicrogame, implementing all required 
+          methods while adding game-specific logic. It handles Phaser 3 physics, sprites, tweens, and input:
+        </p>
+        <div class="code-block">
+          <pre>// AI generates complete game implementation
+export default class SneezeGame extends BaseMicrogame {
+    private face!: Phaser.GameObjects.Image;
+    private isCoveringFace: boolean = false;
+    
+    setupGame(): void {
+        // AI creates all visual elements
+        this.face = this.add.image(GAME_WIDTH/2, GAME_HEIGHT/2, 'face');
+        this.createSneezeParticles();
+    }
+    
+    setupControls(): void {
+        // AI implements game mechanics
+        this.input.on('pointerdown', () => {
+            this.isCoveringFace = true;
+            this.showHandsCoveringFace();
+        });
+    }
+    
+    protected onGameUpdate(): void {
+        // AI adds win/lose logic
+        if (this.isCoveringFace && this.sneezeProgress >= 100) {
+            this.setWinState();
+            this.createSneezeEffect();
+        }
+    }
+}</pre>
+        </div>
+      </div>
+
+      <div class="feature-card" style="margin: 2rem 0;">
+        <h3>✅ Step 5: Validation & Quality Control</h3>
+        <p>
+          Before a game goes live, our validation system rigorously tests the AI's creation:
+        </p>
+        <ul style="margin-left: 2rem; color: #e0e0e0;">
+          <li><strong>Compilation Check:</strong> Does the TypeScript code compile without errors?</li>
+          <li><strong>Method Implementation:</strong> Are all abstract methods from BaseMicrogame implemented?</li>
+          <li><strong>Game Loop Integrity:</strong> Does the game properly handle win/lose states?</li>
+          <li><strong>Resource Management:</strong> Are controls cleaned up properly to prevent memory leaks?</li>
+          <li><strong>Timing Constraints:</strong> Is the game duration between 3-5 seconds?</li>
+        </ul>
+        <p>
+          If validation fails, the AI agent starts fresh with a new concept rather than trying to patch broken code. 
+          This ensures only high-quality, fully functional games make it into the game.
+        </p>
+      </div>
+
+      <div class="agentops-section" style="background: #1a1a1a; border-color: #FFE66D;">
+        <h3 style="color: #FFE66D;">🔬 The Secret Sauce: Structured Creativity</h3>
+        <p>
+          What makes VibeWare's approach unique is the balance between structure and creativity. The BaseMicrogame 
+          class provides just enough framework to ensure consistency and quality, while leaving massive creative 
+          freedom for the AI to explore new mechanics, visual styles, and player interactions.
+        </p>
+        <p>
+          The AI isn't just copying examples - it's learning patterns and applying them in novel ways. Each game 
+          is genuinely unique, with its own personality and gameplay twist. From flicking pickles to shielding 
+          sneezes, the AI's creativity is bounded only by the 3-5 second time constraint and the need to be 
+          immediately understandable.
+        </p>
+      </div>
+    </section>
+
     <!-- AgentOps Section -->
     <section class="section">
       <div class="agentops-section">
