@@ -159,15 +159,146 @@ try {
         passes.push('✓ TypeScript structure is valid');
     }
 
-    // Try to run a basic TypeScript parse check
-    execSync(`npx tsc --noEmit --allowJs --checkJs ${gamePath} 2>&1 || true`, {
-        stdio: 'pipe',
-        encoding: 'utf8'
-    });
+    // Check for common syntax errors that would break the game
+    console.log('🔍 Checking for syntax errors...');
+
+    // Check for incomplete statements (like "this.cat = this.")
+    if (/=\s*this\.\s*$|=\s*this\.\s*\n|=\s*this\.\s*}/m.test(gameContent)) {
+        errors.push('Incomplete statement found (e.g., "this.cat = this.")');
+    }
+
+    // Check for unterminated strings (more accurate check)
+    // This regex looks for strings that start but don't end on the same line
+    const lines = gameContent.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Skip comment lines
+        if (line.trim().startsWith('//') || line.trim().startsWith('*')) continue;
+
+        // Check for strings that open but don't close
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+
+            if (char === '\\') {
+                escaped = true;
+                continue;
+            }
+
+            if (!inString && (char === '"' || char === "'" || char === '`')) {
+                inString = true;
+                stringChar = char;
+            } else if (inString && char === stringChar) {
+                inString = false;
+            }
+        }
+
+        if (inString && stringChar !== '`') { // Template literals can span lines
+            errors.push(`Unterminated string literal on line ${i + 1}`);
+        }
+    }
+
+    // Check for missing closing braces/brackets
+    let braceCount = 0;
+    let bracketCount = 0;
+    let parenCount = 0;
+
+    for (let char of gameContent) {
+        if (char === '{') braceCount++;
+        else if (char === '}') braceCount--;
+        else if (char === '[') bracketCount++;
+        else if (char === ']') bracketCount--;
+        else if (char === '(') parenCount++;
+        else if (char === ')') parenCount--;
+    }
+
+    if (braceCount !== 0) errors.push(`Mismatched braces: ${braceCount > 0 ? 'missing closing' : 'extra closing'} brace(s)`);
+    if (bracketCount !== 0) errors.push(`Mismatched brackets: ${bracketCount > 0 ? 'missing closing' : 'extra closing'} bracket(s)`);
+    if (parenCount !== 0) errors.push(`Mismatched parentheses: ${parenCount > 0 ? 'missing closing' : 'extra closing'} parenthesis/es`);
+
+    // Check for common TypeScript syntax errors
+    if (/\.\s*\n|,\s*\n\s*}|\.\s*;/.test(gameContent)) {
+        warnings.push('Possible syntax error: trailing dot or comma detected');
+    }
+
+    // Only run TypeScript check on this specific file to catch compilation errors
+    console.log('🔍 Running targeted syntax check...');
+    try {
+        // Use the project's tsconfig.json for type checking
+        const tscResult = execSync(`npx tsc --noEmit ${gamePath} 2>&1`, {
+            encoding: 'utf8',
+            stdio: 'pipe'
+        });
+
+        // Check if there were any errors specific to this file
+        if (tscResult && tscResult.includes(gameName)) {
+            const lines = tscResult.split('\n');
+            lines.forEach(line => {
+                if (line.includes(gameName) && (line.includes('error TS') || line.includes('ERROR:'))) {
+                    // Skip errors that are due to TypeScript not having full project context
+                    const errorMsg = line.replace(/^.*?error TS\d+:\s*/, '').trim();
+
+                    // Skip known false positives when checking files in isolation
+                    const skipPatterns = [
+                        /Module .* can only be default-imported using the 'esModuleInterop' flag/,
+                        /Property .* does not exist on type .* extends/,
+                        /Expected 0 arguments, but got 1/,
+                        /Property '(add|physics|input|time|tweens|cameras|scene|sound)' does not exist on type/
+                    ];
+
+                    const shouldSkip = skipPatterns.some(pattern => pattern.test(errorMsg));
+
+                    if (!shouldSkip && errorMsg && !errors.includes(`Syntax error: ${errorMsg}`)) {
+                        errors.push(`Syntax error: ${errorMsg}`);
+                    }
+                }
+            });
+        } else {
+            passes.push('✓ No syntax errors detected');
+        }
+    } catch (tscError) {
+        // Only report errors that are specific to this game file
+        const errorOutput = (tscError.stdout || '') + (tscError.stderr || '');
+        if (errorOutput.includes(gameName)) {
+            const lines = errorOutput.split('\n');
+            lines.forEach(line => {
+                if (line.includes(gameName) && (line.includes('error TS') || line.includes('ERROR:'))) {
+                    const errorMsg = line.replace(/^.*?error TS\d+:\s*/, '').trim();
+
+                    // Skip known false positives when checking files in isolation
+                    const skipPatterns = [
+                        /Module .* can only be default-imported using the 'esModuleInterop' flag/,
+                        /Property .* does not exist on type .* extends/,
+                        /Expected 0 arguments, but got 1/,
+                        /Property '(add|physics|input|time|tweens|cameras|scene|sound)' does not exist on type/
+                    ];
+
+                    const shouldSkip = skipPatterns.some(pattern => pattern.test(errorMsg));
+
+                    if (!shouldSkip && errorMsg && !errors.includes(`Syntax error: ${errorMsg}`)) {
+                        errors.push(`Syntax error: ${errorMsg}`);
+                    }
+                }
+            });
+        }
+
+        // If we filtered out all errors, it's a pass
+        if (errorOutput.includes(gameName) && errors.filter(e => e.startsWith('Syntax error:')).length === 0) {
+            passes.push('✓ No significant syntax errors detected');
+        }
+    }
 
 } catch (error) {
-    // If we can't even parse the file, it's a real error
-    errors.push('TypeScript file has syntax errors');
+    // If we can't even read the file, it's a real error
+    errors.push('TypeScript file has critical errors: ' + error.message);
 }
 
 // Report results

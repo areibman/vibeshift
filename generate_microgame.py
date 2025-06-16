@@ -22,7 +22,7 @@ agentops.init(api_key="f0887d0f-5198-45e0-a167-713eab851484",
 
 @agent
 class MicrogameGenerator:
-    def __init__(self, max_retries: int = 10):
+    def __init__(self, max_retries: int = 3):
         self.max_retries = max_retries
         self.base_path = Path(__file__).parent
         self.context_files = self._load_context_files()
@@ -45,30 +45,51 @@ class MicrogameGenerator:
 
     def _create_system_prompt(self) -> str:
         """Create the system prompt with all context"""
-        return f"""You are an expert TypeScript/Phaser game developer creating microgames for VibeWare.
+        prompt = """You are an expert TypeScript/Phaser game developer creating microgames for VibeWare.
 
 CONTEXT FILES:
 
 === BaseMicrogame.ts (MUST EXTEND THIS) ===
-{self.context_files.get('base_microgame', '')}
+{base_microgame}
 
 === Example: CatchGame.ts ===
-{self.context_files.get('example_catch', '')}
+{example_catch}
 
 === Instructions ===
-{self.context_files.get('instructions', '')}
+{instructions}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY the TypeScript code for the microgame class
 2. Class name MUST match the key passed to super()
-3. MUST implement all abstract methods from BaseMicrogame
-4. MUST call setWinState() or setFailState() based on game outcome
-5. MUST clean up ALL event listeners in cleanupControls()
-6. Use GAME_WIDTH (800) and GAME_HEIGHT (600) for positioning
-7. Keep it simple - players have only 3-5 seconds
+3. MUST have a constructor that calls super({{ key: 'ClassName' }}) where ClassName is your game class name
+4. MUST implement all abstract methods from BaseMicrogame
+5. MUST call setWinState() or setFailState() based on game outcome
+6. MUST clean up ALL event listeners in cleanupControls()
+7. Use GAME_WIDTH (800) and GAME_HEIGHT (600) for positioning
+8. Keep it simple - players have only 3-5 seconds
+9. Import Phaser like this: import Phaser from 'phaser'
+10. Import from correct paths: import BaseMicrogame from '../BaseMicrogame'
+11. BaseMicrogame extends Phaser.Scene, so after extending it you have access to all Phaser.Scene properties like this.add, this.physics, this.input, this.tweens, this.time, this.cameras, etc.
+12. MUST implement resetGameState() method (can be empty: resetGameState(): void {{}})
+13. Follow the exact pattern shown in the CatchGame.ts example for constructor and imports
+14. When using physics groups or arcade physics, cast the body type appropriately: (object.body as Phaser.Physics.Arcade.Body)
+15. TypeScript knows about Phaser properties through inheritance - you DON'T need to declare properties like 'add', 'physics', etc. They come from Phaser.Scene
+16. When creating game objects, always specify their types: e.g., private mySprite!: Phaser.GameObjects.Sprite
 
 Do not include any explanations, comments outside the code, or markdown code blocks. 
 Just output the pure TypeScript code."""
+
+        return prompt.format(
+            base_microgame=self.context_files.get('base_microgame', ''),
+            example_catch=self.context_files.get('example_catch', ''),
+            instructions=self.context_files.get('instructions', '')
+        )
+
+    def _escape_typescript_string(self, text: str) -> str:
+        """Escape quotes for TypeScript string literals"""
+        # Replace single quotes with escaped single quotes
+        # Also escape backslashes to prevent issues
+        return text.replace('\\', '\\\\').replace("'", "\\'")
 
     def _update_registry(self, game_name: str, game_info: Dict[str, str]) -> bool:
         """Update the registry file with the new game"""
@@ -109,10 +130,10 @@ Just output the pure TypeScript code."""
                 # Add metadata at the marker
                 metadata_entry = f"""    {{
         key: '{game_name}',
-        name: '{game_info['name']}',
-        prompt: '{game_info['prompt']}',
-        description: '{game_info['description']}',
-        controls: '{game_info['controls']}'
+        name: '{self._escape_typescript_string(game_info['name'])}',
+        prompt: '{self._escape_typescript_string(game_info['prompt'])}',
+        description: '{self._escape_typescript_string(game_info['description'])}',
+        controls: '{self._escape_typescript_string(game_info['controls'])}'
     }},"""
 
                 content = content.replace(
@@ -249,13 +270,26 @@ Generate the complete TypeScript code for this microgame. The class name should 
                 # Generate code using LiteLLM
                 response = litellm.completion(
                     model=model,
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=2000
+                    messages=messages
                 )
 
-                # type: ignore
-                generated_code = response.choices[0].message.content
+                # Extract content from response
+                generated_code = ""
+                try:
+                    # Try to get content from choices (OpenAI format)
+                    if hasattr(response, 'choices') and len(response.choices) > 0:  # type: ignore
+                        # type: ignore
+                        generated_code = response.choices[0].message.content
+                except:
+                    pass
+
+                # If that didn't work, try direct content access
+                if not generated_code:
+                    try:
+                        generated_code = response.content  # type: ignore
+                    except:
+                        generated_code = str(response)
+
                 if not generated_code:
                     print("❌ No code generated in response")
                     continue
@@ -322,23 +356,14 @@ Generate the complete TypeScript code for this microgame. The class name should 
                         output_path.unlink()
                         print(f"🗑️  Deleted failed file: {output_path}")
 
-                    # Add the generated code and error to message history
-                    messages.append(
-                        {"role": "assistant", "content": generated_code})
-                    messages.append({
-                        "role": "user",
-                        "content": f"""The generated code failed validation with these errors:
+                        # Reset messages for a fresh one-shot attempt (no error context)
+                    messages = [
+                        {"role": "system", "content": self._create_system_prompt()},
+                        {"role": "user", "content": initial_prompt}
+                    ]
 
-{validation_output}
-
-Please generate the COMPLETE corrected TypeScript code for the {name} microgame that fixes all these issues. Remember to:
-1. Fix all TypeScript compilation errors
-2. Ensure all required methods are implemented
-3. Clean up unused imports and variables
-4. Make sure the code follows all the requirements
-
-Generate the full file again with all corrections applied."""
-                    })
+                    print(f"🔄 Starting fresh generation attempt...")
+                    continue
 
             except Exception as e:
                 print(f"❌ Error: {e}")
