@@ -47,6 +47,9 @@ export default class SneezeGame extends BaseMicrogame {
     setupControls(): void {
         this.sKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
 
+        // Remove any existing listeners before adding new ones
+        this.sKey.removeAllListeners();
+
         this.sKey.on('down', () => {
             this.handleSPress();
         });
