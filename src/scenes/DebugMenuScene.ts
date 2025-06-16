@@ -86,9 +86,12 @@ export default class DebugMenuScene extends Phaser.Scene {
 
     private createTitle() {
         const title = this.add.text(GAME_WIDTH / 2, 50, 'DEBUG MENU', {
-            font: 'bold 48px Arial',
-            color: '#00ff00'
-        }).setOrigin(0.5).setStroke('#000000', 3);
+            fontSize: '48px',
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'bold',
+            color: '#00ff00',
+            resolution: 2
+        }).setOrigin(0.5).setStroke('#000000', 6).setPadding(4);
 
         // Glitch effect
         this.time.addEvent({
@@ -160,7 +163,8 @@ export default class DebugMenuScene extends Phaser.Scene {
             fontFamily: 'Arial Black, sans-serif',
             color: '#FFFFFF',
             stroke: '#000000',
-            strokeThickness: 3
+            strokeThickness: 3,
+            resolution: 2
         });
 
         // Prompt badge
@@ -169,21 +173,24 @@ export default class DebugMenuScene extends Phaser.Scene {
         const promptText = this.add.text(250, -20, game.prompt, {
             fontSize: '16px',
             fontFamily: 'Arial Black, sans-serif',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            resolution: 2
         }).setOrigin(0.5);
 
         // Description
         const descText = this.add.text(-350, 5, game.description, {
             fontSize: '16px',
             fontFamily: 'Arial, sans-serif',
-            color: '#CCCCCC'
+            color: '#CCCCCC',
+            resolution: 2
         });
 
         // Controls
         const controlsText = this.add.text(-350, 25, `Controls: ${game.controls}`, {
             fontSize: '14px',
             fontFamily: 'Arial, sans-serif',
-            color: '#999999'
+            color: '#999999',
+            resolution: 2
         });
 
         container.add([bg, nameText, promptBg, promptText, descText, controlsText]);
@@ -214,7 +221,8 @@ export default class DebugMenuScene extends Phaser.Scene {
         const text = this.add.text(0, 0, '← BACK', {
             fontSize: '20px',
             fontFamily: 'Arial Black, sans-serif',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            resolution: 2
         }).setOrigin(0.5);
 
         backButton.add([bg, text]);
@@ -369,7 +377,8 @@ export default class DebugMenuScene extends Phaser.Scene {
         const upArrow = this.add.text(0, 0, '▲', {
             fontSize: '16px',
             fontFamily: 'Arial',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            resolution: 2
         }).setOrigin(0.5);
         this.scrollUpIndicator.add([upBg, upArrow]);
         this.scrollUpIndicator.setVisible(false);
@@ -380,7 +389,8 @@ export default class DebugMenuScene extends Phaser.Scene {
         const downArrow = this.add.text(0, 0, '▼', {
             fontSize: '16px',
             fontFamily: 'Arial',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            resolution: 2
         }).setOrigin(0.5);
         this.scrollDownIndicator.add([downBg, downArrow]);
         this.scrollDownIndicator.setVisible(false);

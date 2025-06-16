@@ -7,7 +7,7 @@ import DebugMenuScene from './scenes/DebugMenuScene';
 import { MICROGAME_SCENES } from './scenes/microgames/registry';
 
 const config: Phaser.Types.Core.GameConfig = {
-    type: Phaser.AUTO,
+    type: Phaser.WEBGL,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     parent: 'game-container',
@@ -15,6 +15,21 @@ const config: Phaser.Types.Core.GameConfig = {
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    render: {
+        pixelArt: false,
+        antialias: true,
+        antialiasGL: true,
+        mipmapFilter: 'LINEAR_MIPMAP_LINEAR',
+        roundPixels: false,
+        transparent: false,
+        clearBeforeRender: true,
+        premultipliedAlpha: true,
+        preserveDrawingBuffer: false,
+        failIfMajorPerformanceCaveat: false,
+        powerPreference: 'high-performance',
+        batchSize: 4096,
+        desynchronized: false
     },
     scene: [
         PreloadScene,
