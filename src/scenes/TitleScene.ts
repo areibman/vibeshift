@@ -17,6 +17,19 @@ export default class TitleScene extends Phaser.Scene {
         const audioManager = AudioManager.getInstance(this);
         audioManager.playTitleMusic();
 
+        // Handle browser autoplay policies - try to play music on first interaction
+        let musicStarted = false;
+        const tryPlayMusic = () => {
+            if (!musicStarted) {
+                audioManager.playTitleMusic();
+                musicStarted = true;
+            }
+        };
+
+        // Add various interaction listeners to ensure music plays
+        this.input.on('pointerdown', tryPlayMusic);
+        this.input.keyboard?.on('keydown', tryPlayMusic);
+
         // Create animated background
         this.createAnimatedBackground();
 
