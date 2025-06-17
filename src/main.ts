@@ -6,6 +6,15 @@ import TransitionScene from './scenes/TransitionScene';
 import DebugMenuScene from './scenes/DebugMenuScene';
 import { MICROGAME_SCENES } from './scenes/microgames/registry';
 
+import posthog from 'posthog-js'
+
+posthog.init('phc_QhLKPSB0O4abQdeGvzxhvzmOAycwAH0aZKik6QaTyOw',
+    {
+        api_host: 'https://us.i.posthog.com',
+        person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
+    }
+)
+
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.WEBGL,
     width: GAME_WIDTH,
