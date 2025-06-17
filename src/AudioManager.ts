@@ -5,6 +5,7 @@ export class AudioManager {
     private scene: Phaser.Scene;
     private currentMusic: Phaser.Sound.BaseSound | null = null;
     private shortClips: string[] = [];
+    private isPlayingTitle: boolean = false;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -25,45 +26,68 @@ export class AudioManager {
     }
 
     preloadAudio(scene: Phaser.Scene) {
-        console.log('Starting audio preload...');
-
         // Load title music
-        scene.load.audio('titleMusic', 'audio/theme.MP3');
-        console.log('Loading title music: audio/theme.MP3');
+        scene.load.audio('titleMusic', 'audio/theme.mp3');
 
         // Load transition music
-        scene.load.audio('transitionMusic', 'audio/transition_long.MP3');
-        console.log('Loading transition music: audio/transition_long.MP3');
+        scene.load.audio('transitionMusic', 'audio/transition_long.mp3');
 
         // Load all short clips
         for (let i = 1; i <= 7; i++) {
-            scene.load.audio(`short${i}`, `audio/${i}.MP3`);
-            console.log(`Loading short clip: audio/${i}.MP3`);
+            scene.load.audio(`short${i}`, `audio/${i}.mp3`);
         }
-
-        // Add load complete listener
-        scene.load.on('complete', () => {
-            console.log('All audio files loaded successfully!');
-        });
-
-        // Add load error listener
-        scene.load.on('loaderror', (file: any) => {
-            console.error('Failed to load audio file:', file.key, file.src);
-        });
     }
 
     playTitleMusic() {
+        // Prevent multiple instances
+        if (this.isPlayingTitle && this.currentMusic) {
+            return;
+        }
+
         this.stopCurrentMusic();
+
         try {
+            // Check if audio context needs to be resumed
+            if ('context' in this.scene.sound && (this.scene.sound as any).context?.state === 'suspended') {
+                (this.scene.sound as any).context.resume().then(() => {
+                    this.actuallyPlayTitleMusic();
+                }).catch((error: any) => {
+                    console.error('Failed to resume audio context:', error);
+                });
+            } else {
+                // Context is already running, play immediately
+                this.actuallyPlayTitleMusic();
+            }
+        } catch (error) {
+            console.error('Error in playTitleMusic:', error);
+        }
+    }
+
+    private actuallyPlayTitleMusic() {
+        try {
+            // Double check we don't already have music
+            if (this.currentMusic) {
+                this.currentMusic.stop();
+                this.currentMusic.destroy();
+                this.currentMusic = null;
+            }
+
             this.currentMusic = this.scene.sound.add('titleMusic', {
                 loop: true,
                 volume: 0.5
             });
-            this.currentMusic.play();
-            console.log('Title music playback initiated');
+
+            // Explicitly set volume after creation
+            (this.currentMusic as any).setVolume(0.5);
+
+            const playResult = this.currentMusic.play();
+
+            // Set flag if playing
+            if (playResult !== false) {
+                this.isPlayingTitle = true;
+            }
         } catch (error) {
             console.error('Error playing title music:', error);
-            console.log('This may be due to browser autoplay policies. Music will play after user interaction.');
         }
     }
 
@@ -108,6 +132,7 @@ export class AudioManager {
         if (this.currentMusic) {
             this.currentMusic.stop();
             this.currentMusic = null;
+            this.isPlayingTitle = false;
         }
     }
 
